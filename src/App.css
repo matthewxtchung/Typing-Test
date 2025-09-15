@@ -1,0 +1,60 @@
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+  margin-top: 24px;
+  margin-left: 24px;
+}
+
+.test {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 1400px;
+  height: auto;
+  font-size: 1.85em;
+}
+
+.typing-input {
+  width: 100%;
+  font-size: 1.5em;
+  padding: 8px;
+  margin-top: 12px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+}
+
+.correct {
+  color: #4caf50; /* green */
+}
+
+.incorrect {
+  color: #f44336; /* red */
+}
+
+.result-screen {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-size: 2em;
+  color: white;
+}
+
+.reset-button {
+  margin-top: 20px;
+  font-size: 1em;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #646cff;
+  color: white;
+}
+
+.reset-button:hover {
+  background-color: #535bf2;
+}
