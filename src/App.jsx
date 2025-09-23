@@ -1,13 +1,17 @@
 import { useState, useRef } from "react";
 import "./App.css";
+import quotesData from "./quotes.json";
 
 function App() {
-  const targetText = "This is where the words will be.";
+  const [targetText, setTargetText] = useState(
+  quotesData[Math.floor(Math.random() * quotesData.length)].text
+  );
   const [input, setInput] = useState("");
   const [startTime, setStartTime] = useState(null);
   const [wpm, setWpm] = useState(null);
   const [finished, setFinished] = useState(false);
 
+  // Used to make sure that typing box is focused again as soon as the test resets, used in line 58
   const inputRef = useRef(null);
 
   const handleChange = (e) => {
@@ -48,8 +52,8 @@ function App() {
     setStartTime(null);
     setWpm(null);
     setFinished(false);
+    setTargetText(quotesData[Math.floor(Math.random() * quotesData.length)].text);
 
-    // focus the input box straight away
     setTimeout(() => {
       inputRef.current?.focus();
     }, 0);
