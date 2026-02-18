@@ -1,8 +1,42 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #1e1e2e;
+  color: #cdd6f4;
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 60px 180px;
+  background-color: #1e1e2e;
+  z-index: 10;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo {
+  height: 100px;
+  margin-right: -25px;
+  width: auto;
+}
+
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-  margin-top: 24px;
-  margin-left: 24px;
+  font-size: 28px;
+  font-family: "Zalando Sans Expanded", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+  color: #cba6f7;
 }
 
 .test {
@@ -13,25 +47,48 @@ h1 {
   text-align: center;
   width: 1400px;
   height: auto;
-  font-size: 1.85em;
+  font-size: 2em;
+  font-family: 'Source Code Pro', monospace;
+  color: #6c7086;
+}
+
+.caret {
+  position: absolute;
+  width: 2px;
+  height: 1.1em;
+  background-color: #cba6f7;
+  animation: blink 1s step-start infinite;
+  transition: left 0.08s linear, top 0.08s linear;
+  pointer-events: none;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.caret-active {
+  animation: none;
 }
 
 .typing-input {
-  width: 100%;
-  font-size: 1.5em;
-  padding: 8px;
-  margin-top: 12px;
-  border-radius: 6px;
   border: none;
   outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
 .correct {
-  color: #4caf50; /* green */
+  color: #cdd6f4;
 }
 
 .incorrect {
-  color: #f44336; /* red */
+  color: #f38ba8;
 }
 
 .result-screen {
@@ -41,20 +98,39 @@ h1 {
   transform: translate(-50%, -50%);
   text-align: center;
   font-size: 2em;
-  color: white;
+  color: #cdd6f4;
+}
+
+.result-label {
+  font-size: 26px;
+  color: #6c7086;
+  margin-bottom: -25px;
+  margin-top: 30px;
+  font-family: 'Source Code Pro', monospace;
+}
+
+.result-value {
+  font-size: 82px;
+  color: #cba6f7;
+  margin-bottom: 20px;
 }
 
 .reset-button {
-  margin-top: 20px;
-  font-size: 1em;
-  padding: 10px 20px;
+  margin-top: 30px;
   border: none;
   border-radius: 8px;
+  padding: 10px 20px;
   cursor: pointer;
-  background-color: #646cff;
-  color: white;
+  background-color: #cba6f7;
+  color: #1e1e2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 28px;
 }
 
 .reset-button:hover {
-  background-color: #535bf2;
+  background-color: #b4befe;
 }
