@@ -11,6 +11,7 @@ function App() {
   const [startTime, setStartTime] = useState(null);
   const [wpm, setWpm] = useState(null);
   const [finished, setFinished] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
 
   const inputRef = useRef(null);
   const caretRef = useRef(null);
@@ -86,6 +87,12 @@ function App() {
           <div className="header-content">
             <img src={knightLogo} alt="Knight Logo" className="logo" />
             <h1>Sir Type-A-Lot</h1>
+            <button
+              className="user-button"
+              onClick={() => setShowLogin(true)}
+            >
+              👤
+            </button>
           </div>
         </header>
         <div className="result-screen">
