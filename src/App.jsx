@@ -15,6 +15,7 @@ function App() {
   const [wpm, setWpm] = useState(null);
   const [finished, setFinished] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [pageLoaded, setPageLoaded] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
   const [user, setUser] = useState(null);
@@ -27,6 +28,7 @@ function App() {
   useEffect(() => {
     document.fonts.ready.then(() => {
       setMounted(true);
+      setTimeout(() => setPageLoaded(true), 50);
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -129,7 +131,7 @@ function App() {
 
   return (
     <div>
-      <header className="header">
+      <header className={`header fade ${pageLoaded ? "" : "fade-hidden"}`}>
         <div className="header-content">
           <img src={knightLogo} alt="Knight Logo" className="logo" />
           <h1>Sir Types-A-Lot</h1>
@@ -149,7 +151,7 @@ function App() {
       </header>
 
       <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "2rem" }}>
-        <div className={`test fade ${finished || showDashboard ? "fade-hidden" : ""}`} style={{ position: "relative", transform: "none", top: "auto", left: "auto" }} onClick={() => inputRef.current?.focus()}>
+        <div className={`test fade ${!pageLoaded || finished || showDashboard ? "fade-hidden" : ""}`} style={{ position: "relative", transform: "none", top: "auto", left: "auto" }} onClick={() => inputRef.current?.focus()}>
           <p style={{ position: "relative" }}>
             {renderedText}
           </p>
@@ -166,7 +168,7 @@ function App() {
             }}
           />
         </div>
-        <div className={`fade ${finished || showDashboard || !startTime ? "fade-hidden" : ""}`}>
+        <div className={`fade ${!pageLoaded || finished || showDashboard ? "fade-hidden" : ""}`}>
           <button className="user-button" onClick={handleReset}>reset</button>
         </div>
       </div>
