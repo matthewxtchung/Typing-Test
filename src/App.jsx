@@ -25,7 +25,9 @@ function App() {
   const charsRef = useRef([]);
 
   useEffect(() => {
-    setMounted(true);
+    document.fonts.ready.then(() => {
+      setMounted(true);
+    });
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) fetchUsername(session.user.id);
