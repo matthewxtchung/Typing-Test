@@ -165,12 +165,15 @@ function App() {
           }}
         />
       </div>
+      <div className={`fade ${finished || showDashboard ? "fade-hidden" : ""}`} style={{ textAlign: "center", marginTop: "1rem" }}>
+        <button className="user-button" onClick={handleReset}>reset</button>
+      </div>
 
       <div className={`result-screen fade ${!finished || showDashboard ? "fade-hidden" : ""}`}>
         <h1>Test Complete!</h1>
         <p className="result-label">wpm</p>
         <p className="result-value">{wpm}</p>
-        <button onClick={handleReset} className="reset-button">↺</button>
+        <button onClick={handleReset} className="user-button">reset</button>
       </div>
 
       <div className={`fade ${!showDashboard ? "fade-hidden" : ""}`}>
