@@ -161,12 +161,12 @@ function App() {
             onChange={handleChange}
             className="typing-input"
             autoFocus
-            onBlur={() => {
-              if (!showAuth && !showDashboard) inputRef.current?.focus();
+            onBlur={(e) => {
+              if (!showAuth && !showDashboard && e.relatedTarget?.className !== "user-button") inputRef.current?.focus();
             }}
           />
         </div>
-        <div className={`fade ${finished || showDashboard ? "fade-hidden" : ""}`}>
+        <div className={`fade ${finished || showDashboard || !startTime ? "fade-hidden" : ""}`}>
           <button className="user-button" onClick={handleReset}>reset</button>
         </div>
       </div>
