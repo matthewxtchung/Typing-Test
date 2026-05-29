@@ -135,3 +135,45 @@ h1 {
   background-color: #b4befe;
 }
 
+.fade {
+  transition: opacity 0.3s ease;
+}
+
+.fade-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.header-right {
+  margin-left: auto;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-email {
+  font-size: 13px;
+  font-family: 'Source Code Pro', monospace;
+  color: #6c7086;
+}
+
+.user-button {
+  background: none;
+  border: 1px solid #313244;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-family: 'Source Code Pro', monospace;
+  color: #6c7086;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.user-button:hover {
+  border-color: #cba6f7;
+  color: #cba6f7;
+}
+

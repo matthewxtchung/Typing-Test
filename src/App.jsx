@@ -2,6 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import "./App.css";
 import quotesData from "./quotes.json";
 import knightLogo from "./assets/icon.png";
+import AuthModal from "./AuthModal";
+import Dashboard from "./Dashboard";
+import { supabase } from "./supabaseClient";
 
 function App() {
   const [targetText, setTargetText] = useState(
@@ -11,11 +14,38 @@ function App() {
   const [startTime, setStartTime] = useState(null);
   const [wpm, setWpm] = useState(null);
   const [finished, setFinished] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [user, setUser] = useState(null);
+  const [username, setUsername] = useState(null);
 
   const inputRef = useRef(null);
   const caretRef = useRef(null);
   const charsRef = useRef([]);
+
+  useEffect(() => {
+    setMounted(true);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) fetchUsername(session.user.id);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) fetchUsername(session.user.id);
+      else setUsername(null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchUsername = async (userId) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", userId)
+      .single();
+    if (data) setUsername(data.username);
+  };
 
   useEffect(() => {
     const measure = () => {
@@ -32,7 +62,7 @@ function App() {
 
     const frame = requestAnimationFrame(measure);
     return () => cancelAnimationFrame(frame);
-  }, [input, targetText]);
+  }, [input, targetText, mounted]);
 
   const handleChange = (e) => {
     const value = e.target.value;
@@ -55,6 +85,12 @@ function App() {
       const wpmCalc = timeTakenMinutes > 0 ? Math.round(wordsTyped / timeTakenMinutes) : 0;
       setWpm(wpmCalc);
       setFinished(true);
+
+      if (user) {
+        supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc }).then(({ error }) => {
+          console.log("insert result:", error ?? "success");
+        });
+      }
     }
   };
 
@@ -66,6 +102,15 @@ function App() {
     charsRef.current = [];
     setTargetText(quotesData[Math.floor(Math.random() * quotesData.length)].text);
     setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleCloseDashboard = () => {
+    setShowDashboard(false);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
   };
 
   const renderedText = targetText.split("").map((char, i) => {
@@ -80,40 +125,28 @@ function App() {
     );
   });
 
-  if (finished) {
-    return (
-      <div>
-        <header className="header">
-          <div className="header-content">
-            <img src={knightLogo} alt="Knight Logo" className="logo" />
-            <h1>Sir Type-A-Lot</h1>
-            <button
-              className="user-button"
-              onClick={() => setShowLogin(true)}
-            >
-              👤
-            </button>
-          </div>
-        </header>
-        <div className="result-screen">
-          <h1>Test Complete!</h1>
-          <p className="result-label">wpm</p>
-          <p className="result-value">{wpm}</p>
-          <button onClick={handleReset} className="reset-button">↺</button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
       <header className="header">
         <div className="header-content">
           <img src={knightLogo} alt="Knight Logo" className="logo" />
-          <h1>Sir Type-A-Lot</h1>
+          <h1>Sir Types-A-Lot</h1>
+          <div className="header-right">
+            {user ? (
+              <div className="user-info">
+                <button className="user-button" onClick={() => setShowDashboard(true)}>
+                  {username ?? user.email}
+                </button>
+                <button className="user-button" onClick={handleSignOut}>logout</button>
+              </div>
+            ) : (
+              <button className="user-button" onClick={() => setShowAuth(true)}>login</button>
+            )}
+          </div>
         </div>
       </header>
-      <div className="test" onClick={() => inputRef.current?.focus()}>
+
+      <div className={`test fade ${finished || showDashboard ? "fade-hidden" : ""}`} onClick={() => inputRef.current?.focus()}>
         <p style={{ position: "relative" }}>
           {renderedText}
         </p>
@@ -127,6 +160,31 @@ function App() {
           autoFocus
         />
       </div>
+
+      <div className={`result-screen fade ${!finished || showDashboard ? "fade-hidden" : ""}`}>
+        <h1>Test Complete!</h1>
+        <p className="result-label">wpm</p>
+        <p className="result-value">{wpm}</p>
+        <button onClick={handleReset} className="reset-button">↺</button>
+      </div>
+
+      <div className={`fade ${!showDashboard ? "fade-hidden" : ""}`}>
+        {user && (
+          <Dashboard
+            user={user}
+            username={username}
+            onClose={handleCloseDashboard}
+            visible={showDashboard}
+          />
+        )}
+      </div>
+
+      {showAuth && (
+        <AuthModal
+          onClose={() => setShowAuth(false)}
+          onAuth={(u) => { setUser(u); fetchUsername(u.id); }}
+        />
+      )}
     </div>
   );
 }
