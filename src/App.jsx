@@ -160,7 +160,9 @@ function App() {
           onChange={handleChange}
           className="typing-input"
           autoFocus
-          onBlur={() => inputRef.current?.focus()}
+          onBlur={() => {
+            if (!showAuth && !showDashboard) inputRef.current?.focus();
+          }}
         />
       </div>
 
