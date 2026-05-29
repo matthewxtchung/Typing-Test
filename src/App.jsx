@@ -160,6 +160,7 @@ function App() {
           onChange={handleChange}
           className="typing-input"
           autoFocus
+          onBlur={() => inputRef.current?.focus()}
         />
       </div>
 
