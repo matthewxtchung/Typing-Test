@@ -148,25 +148,27 @@ function App() {
         </div>
       </header>
 
-      <div className={`test fade ${finished || showDashboard ? "fade-hidden" : ""}`} onClick={() => inputRef.current?.focus()}>
-        <p style={{ position: "relative" }}>
-          {renderedText}
-        </p>
-        <span ref={caretRef} className={`caret ${startTime ? "caret-active" : ""}`} />
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={handleChange}
-          className="typing-input"
-          autoFocus
-          onBlur={() => {
-            if (!showAuth && !showDashboard) inputRef.current?.focus();
-          }}
-        />
-      </div>
-      <div className={`fade ${finished || showDashboard ? "fade-hidden" : ""}`} style={{ textAlign: "center", marginTop: "1rem" }}>
-        <button className="user-button" onClick={handleReset}>reset</button>
+      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "2rem" }}>
+        <div className={`test fade ${finished || showDashboard ? "fade-hidden" : ""}`} style={{ position: "relative", transform: "none", top: "auto", left: "auto" }} onClick={() => inputRef.current?.focus()}>
+          <p style={{ position: "relative" }}>
+            {renderedText}
+          </p>
+          <span ref={caretRef} className={`caret ${startTime ? "caret-active" : ""}`} />
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={handleChange}
+            className="typing-input"
+            autoFocus
+            onBlur={() => {
+              if (!showAuth && !showDashboard) inputRef.current?.focus();
+            }}
+          />
+        </div>
+        <div className={`fade ${finished || showDashboard ? "fade-hidden" : ""}`}>
+          <button className="user-button" onClick={handleReset}>reset</button>
+        </div>
       </div>
 
       <div className={`result-screen fade ${!finished || showDashboard ? "fade-hidden" : ""}`}>
