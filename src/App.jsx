@@ -186,7 +186,7 @@ function App() {
 
       {showAuth && (
         <AuthModal
-          onClose={() => setShowAuth(false)}
+          onClose={() => { setShowAuth(false); setTimeout(() => inputRef.current?.focus(), 0); }}
           onAuth={(u) => { setUser(u); fetchUsername(u.id); }}
         />
       )}
