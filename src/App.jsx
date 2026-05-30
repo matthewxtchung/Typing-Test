@@ -4,6 +4,7 @@ import quotesData from "./quotes.json";
 import knightLogo from "./assets/icon.png";
 import AuthModal from "./AuthModal";
 import Dashboard from "./Dashboard";
+import Leaderboard from "./Leaderboard";
 import { supabase } from "./supabaseClient";
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
   const [pageLoaded, setPageLoaded] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showDashboard, setShowDashboard] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [user, setUser] = useState(null);
   const [username, setUsername] = useState(null);
 
@@ -113,6 +115,11 @@ function App() {
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
+  const handleCloseLeaderboard = () => {
+    setShowLeaderboard(false);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
   };
@@ -129,6 +136,8 @@ function App() {
     );
   });
 
+  const anyOverlay = showDashboard || showLeaderboard;
+
   return (
     <div>
       <header className={`header fade ${pageLoaded ? "" : "fade-hidden"}`}>
@@ -136,6 +145,7 @@ function App() {
           <img src={knightLogo} alt="Knight Logo" className="logo" />
           <h1>Sir Types-A-Lot</h1>
           <div className="header-right">
+            <button className="user-button" onClick={() => setShowLeaderboard(true)}>leaderboard</button>
             {user ? (
               <div className="user-info">
                 <button className="user-button" onClick={() => setShowDashboard(true)}>
@@ -151,7 +161,7 @@ function App() {
       </header>
 
       <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "2rem" }}>
-        <div className={`test fade ${!pageLoaded || finished || showDashboard ? "fade-hidden" : ""}`} style={{ position: "relative", transform: "none", top: "auto", left: "auto" }} onClick={() => inputRef.current?.focus()}>
+        <div className={`test fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`} style={{ position: "relative", transform: "none", top: "auto", left: "auto" }} onClick={() => inputRef.current?.focus()}>
           <p style={{ position: "relative" }}>
             {renderedText}
           </p>
@@ -164,16 +174,16 @@ function App() {
             className="typing-input"
             autoFocus
             onBlur={(e) => {
-              if (!showAuth && !showDashboard && e.relatedTarget?.className !== "user-button") inputRef.current?.focus();
+              if (!showAuth && !anyOverlay && e.relatedTarget?.className !== "user-button") inputRef.current?.focus();
             }}
           />
         </div>
-        <div className={`fade ${!pageLoaded || finished || showDashboard ? "fade-hidden" : ""}`}>
+        <div className={`fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`}>
           <button className="user-button" onClick={handleReset}>reset</button>
         </div>
       </div>
 
-      <div className={`result-screen fade ${!finished || showDashboard ? "fade-hidden" : ""}`}>
+      <div className={`result-screen fade ${!finished || anyOverlay ? "fade-hidden" : ""}`}>
         <h1>Test Complete!</h1>
         <p className="result-label">wpm</p>
         <p className="result-value">{wpm}</p>
@@ -189,6 +199,13 @@ function App() {
             visible={showDashboard}
           />
         )}
+      </div>
+
+      <div className={`fade ${!showLeaderboard ? "fade-hidden" : ""}`}>
+        <Leaderboard
+          onClose={handleCloseLeaderboard}
+          username={username}
+        />
       </div>
 
       {showAuth && (
