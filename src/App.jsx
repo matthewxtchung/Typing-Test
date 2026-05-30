@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import "./App.css";
 import quotesData from "./quotes.json";
 import { generateWords } from "./words";
+import { buildLines } from "./measureText";
 import knightLogo from "./assets/icon.png";
 import AuthModal from "./AuthModal";
 import Dashboard from "./Dashboard";
@@ -9,7 +10,8 @@ import Leaderboard from "./Leaderboard";
 import { supabase } from "./supabaseClient";
 
 const RANKED_TIME = 15;
-const WORDS_PER_LINE = 10;
+const CONTAINER_WIDTH = 1400;
+const FONT = '32px "Source Code Pro", monospace';
 
 function App() {
   const [mode, setMode] = useState("normal");
@@ -28,7 +30,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [username, setUsername] = useState(null);
   const [timeLeft, setTimeLeft] = useState(RANKED_TIME);
-  const [lineStart, setLineStart] = useState(0); // which line index is currently the top visible line
+  const [lines, setLines] = useState([]);
 
   const inputRef = useRef(null);
   const caretRef = useRef(null);
@@ -63,17 +65,13 @@ function App() {
     if (data) setUsername(data.username);
   };
 
-  // split words into lines of WORDS_PER_LINE
   const words = useMemo(() => targetText.split(" "), [targetText]);
-  const lines = useMemo(() => {
-    const result = [];
-    for (let i = 0; i < words.length; i += WORDS_PER_LINE) {
-      result.push(words.slice(i, i + WORDS_PER_LINE));
-    }
-    return result;
-  }, [words]);
 
-  // figure out which line the current typed position is on
+  useEffect(() => {
+    if (!mounted) return;
+    setLines(buildLines(words, CONTAINER_WIDTH, FONT));
+  }, [targetText, mounted]);
+
   const currentWordIndex = useMemo(() => {
     let charIndex = 0;
     for (let i = 0; i < words.length; i++) {
@@ -83,13 +81,18 @@ function App() {
     return words.length - 1;
   }, [input, words]);
 
-  const currentLine = Math.floor(currentWordIndex / WORDS_PER_LINE);
+  const currentLine = useMemo(() => {
+    if (!lines.length) return 0;
+    let wordCount = 0;
+    for (let li = 0; li < lines.length; li++) {
+      wordCount += lines[li].length;
+      if (currentWordIndex < wordCount) return li;
+    }
+    return lines.length - 1;
+  }, [currentWordIndex, lines]);
 
-  // shift window: show lines currentLine-1, currentLine, currentLine+1
-  // but clamp so we always show 3 lines
   const visibleLineStart = Math.max(0, currentLine - 1);
 
-  // caret positioning
   useEffect(() => {
     const measure = () => {
       const currentChar = charsRef.current[input.length];
@@ -189,7 +192,6 @@ function App() {
     setWpm(null);
     setFinished(false);
     setTimeLeft(RANKED_TIME);
-    setLineStart(0);
     charsRef.current = [];
   };
 
@@ -229,15 +231,13 @@ function App() {
     await supabase.auth.signOut();
   };
 
-  // render only 3 visible lines
   const visibleLines = lines.slice(visibleLineStart, visibleLineStart + 3);
 
-  // build char index offset for visible lines
   const charOffset = useMemo(() => {
     let offset = 0;
     for (let li = 0; li < visibleLineStart; li++) {
-      for (let wi = 0; wi < lines[li].length; wi++) {
-        offset += lines[li][wi].length + 1;
+      for (const word of lines[li]) {
+        offset += word.length + 1;
       }
     }
     return offset;
@@ -264,8 +264,8 @@ function App() {
       });
 
       const spaceIndex = localCharIndex + word.length;
-      const isLastWordInLastLine = li === visibleLines.length - 1 && wi === lineWords.length - 1;
-      const spaceEl = !isLastWordInLastLine ? (
+      const isLastWord = li === visibleLines.length - 1 && wi === lineWords.length - 1;
+      const spaceEl = !isLastWord ? (
         <span
           key={spaceIndex}
           className={spaceIndex < input.length ? (input[spaceIndex] === " " ? "correct" : "incorrect") : ""}
@@ -285,7 +285,7 @@ function App() {
     });
 
     return (
-      <div key={li} style={{ whiteSpace: "nowrap" }}>
+      <div key={`${visibleLineStart}-${li}`} style={{ whiteSpace: "nowrap" }}>
         {renderedWords}
       </div>
     );
