@@ -36,6 +36,8 @@ function App() {
   const startTimeRef = useRef(null);
   const wordRefs = useRef([]);
   const testRef = useRef(null);
+  const currentLineRef = useRef(0);
+  const lineHeightRef = useRef(null);
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -77,31 +79,48 @@ function App() {
     return () => cancelAnimationFrame(frame);
   }, [input, targetText, mounted, lineOffset]);
 
-  // line shifting: watch which line the current word is on
+  // line shifting
   useEffect(() => {
-    if (!testRef.current) return;
+    if (!started) return;
+
     const words = targetText.split(" ");
     let charIndex = 0;
+
+    // find current word index
+    let currentWordIndex = 0;
     for (let i = 0; i < words.length; i++) {
-      const wordStart = charIndex;
       const wordEnd = charIndex + words[i].length;
-      if (input.length >= wordStart && input.length <= wordEnd + 1) {
-        // current word is word i
-        const wordEl = wordRefs.current[i];
-        if (!wordEl || !testRef.current) break;
-        const testRect = testRef.current.getBoundingClientRect();
-        const wordRect = wordEl.getBoundingClientRect();
-        const relativeTop = wordRect.top - testRect.top + lineOffset;
-        const lineHeight = wordRect.height;
-        // if current word has moved past the first line, shift down
-        if (relativeTop > lineHeight * 0.5) {
-          setLineOffset((prev) => prev - lineHeight);
-        }
+      if (input.length <= wordEnd) {
+        currentWordIndex = i;
         break;
       }
       charIndex += words[i].length + 1;
     }
-  }, [input]);
+
+    const currentWordEl = wordRefs.current[currentWordIndex];
+    const firstWordEl = wordRefs.current[0];
+    if (!currentWordEl || !firstWordEl) return;
+
+    // measure line height once from first word
+    if (!lineHeightRef.current) {
+      lineHeightRef.current = firstWordEl.getBoundingClientRect().height;
+    }
+    const lineHeight = lineHeightRef.current;
+    if (!lineHeight) return;
+
+    const firstWordTop = firstWordEl.getBoundingClientRect().top;
+    const currentWordTop = currentWordEl.getBoundingClientRect().top;
+
+    // which line is the current word on relative to the first word
+    const lineNumber = Math.round((currentWordTop - firstWordTop) / lineHeight);
+
+    if (lineNumber > currentLineRef.current) {
+      currentLineRef.current = lineNumber;
+      if (lineNumber >= 2) {
+        setLineOffset((prev) => prev - lineHeight);
+      }
+    }
+  }, [input, started]);
 
   const finishTest = (typedValue) => {
     clearInterval(timerRef.current);
@@ -194,6 +213,8 @@ function App() {
     setFinished(false);
     setTimeLeft(RANKED_TIME);
     setLineOffset(0);
+    currentLineRef.current = 0;
+    lineHeightRef.current = null;
     charsRef.current = [];
     wordRefs.current = [];
     if (mode === "normal") {
@@ -215,6 +236,8 @@ function App() {
     setFinished(false);
     setTimeLeft(RANKED_TIME);
     setLineOffset(0);
+    currentLineRef.current = 0;
+    lineHeightRef.current = null;
     charsRef.current = [];
     wordRefs.current = [];
     if (newMode === "normal") {
@@ -239,7 +262,6 @@ function App() {
     await supabase.auth.signOut();
   };
 
-  // build rendered chars with word refs for line tracking
   const words = targetText.split(" ");
   let charIndex = 0;
   const renderedWords = words.map((word, wi) => {
@@ -260,7 +282,6 @@ function App() {
       );
     });
 
-    // space after word
     const spaceIndex = charIndex + word.length;
     let spaceClass = "";
     if (spaceIndex < input.length) {
