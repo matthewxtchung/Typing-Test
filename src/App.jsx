@@ -141,18 +141,16 @@ function App() {
   return (
     <div>
       <header className={`header fade ${pageLoaded ? "" : "fade-hidden"}`}>
-        <div className="header-content">
-          <img src={knightLogo} alt="Knight Logo" className="logo" />
-          <h1>Sir Types-A-Lot</h1>
-          <div className="header-right">
+        <div className="header-right">
+          <div className="user-info">
             <button className="user-button" onClick={() => setShowLeaderboard(true)}>leaderboard</button>
             {user ? (
-              <div className="user-info">
+              <>
                 <button className="user-button" onClick={() => setShowDashboard(true)}>
                   {username ?? user.email}
                 </button>
                 <button className="user-button" onClick={handleSignOut}>logout</button>
-              </div>
+              </>
             ) : (
               <button className="user-button" onClick={() => setShowAuth(true)}>login</button>
             )}
