@@ -20,7 +20,7 @@ export const words = [
   "again", "change", "off", "play", "spell", "air", "away", "animal",
   "house", "point", "page", "letter", "mother", "answer", "found", "study",
   "still", "learn", "plant", "cover", "food", "sun", "four", "thought",
-  "let", "keep", "children", "feet", "land", "side", "without", "boy",
+  "let", "keep", "children", "land", "side", "without", "boy",
   "once", "animal", "life", "enough", "took", "sometimes", "mountains",
   "cut", "young", "talk", "soon", "list", "song", "being", "leave",
   "family", "body", "music", "color", "stand", "sun", "questions", "fish",
