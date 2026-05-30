@@ -351,6 +351,7 @@ function App() {
             onChange={handleChange}
             className="typing-input"
             autoFocus
+            onPaste={(e) => e.preventDefault()}
             onBlur={(e) => {
               if (!showAuth && !anyOverlay && e.relatedTarget?.className !== "user-button") inputRef.current?.focus();
             }}
