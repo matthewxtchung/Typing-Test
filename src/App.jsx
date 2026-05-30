@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import "./App.css";
 import quotesData from "./quotes.json";
 import { generateWords } from "./words";
@@ -9,6 +9,7 @@ import Leaderboard from "./Leaderboard";
 import { supabase } from "./supabaseClient";
 
 const RANKED_TIME = 15;
+const WORDS_PER_LINE = 10;
 
 function App() {
   const [mode, setMode] = useState("normal");
@@ -27,17 +28,14 @@ function App() {
   const [user, setUser] = useState(null);
   const [username, setUsername] = useState(null);
   const [timeLeft, setTimeLeft] = useState(RANKED_TIME);
-  const [lineOffset, setLineOffset] = useState(0);
+  const [lineStart, setLineStart] = useState(0); // which line index is currently the top visible line
 
   const inputRef = useRef(null);
   const caretRef = useRef(null);
   const charsRef = useRef([]);
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
-  const wordRefs = useRef([]);
   const testRef = useRef(null);
-  const currentLineRef = useRef(0);
-  const lineHeightRef = useRef(null);
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -65,6 +63,32 @@ function App() {
     if (data) setUsername(data.username);
   };
 
+  // split words into lines of WORDS_PER_LINE
+  const words = useMemo(() => targetText.split(" "), [targetText]);
+  const lines = useMemo(() => {
+    const result = [];
+    for (let i = 0; i < words.length; i += WORDS_PER_LINE) {
+      result.push(words.slice(i, i + WORDS_PER_LINE));
+    }
+    return result;
+  }, [words]);
+
+  // figure out which line the current typed position is on
+  const currentWordIndex = useMemo(() => {
+    let charIndex = 0;
+    for (let i = 0; i < words.length; i++) {
+      charIndex += words[i].length + 1;
+      if (charIndex > input.length) return i;
+    }
+    return words.length - 1;
+  }, [input, words]);
+
+  const currentLine = Math.floor(currentWordIndex / WORDS_PER_LINE);
+
+  // shift window: show lines currentLine-1, currentLine, currentLine+1
+  // but clamp so we always show 3 lines
+  const visibleLineStart = Math.max(0, currentLine - 1);
+
   // caret positioning
   useEffect(() => {
     const measure = () => {
@@ -77,50 +101,7 @@ function App() {
     };
     const frame = requestAnimationFrame(measure);
     return () => cancelAnimationFrame(frame);
-  }, [input, targetText, mounted, lineOffset]);
-
-  // line shifting
-  useEffect(() => {
-    if (!started) return;
-
-    const words = targetText.split(" ");
-    let charIndex = 0;
-
-    // find current word index
-    let currentWordIndex = 0;
-    for (let i = 0; i < words.length; i++) {
-      const wordEnd = charIndex + words[i].length;
-      if (input.length <= wordEnd) {
-        currentWordIndex = i;
-        break;
-      }
-      charIndex += words[i].length + 1;
-    }
-
-    const currentWordEl = wordRefs.current[currentWordIndex];
-    const firstWordEl = wordRefs.current[0];
-    if (!currentWordEl || !firstWordEl) return;
-
-    // measure line height once from first word
-    if (!lineHeightRef.current) {
-      lineHeightRef.current = firstWordEl.getBoundingClientRect().height;
-    }
-    const lineHeight = lineHeightRef.current;
-    if (!lineHeight) return;
-
-    const firstWordTop = firstWordEl.getBoundingClientRect().top;
-    const currentWordTop = currentWordEl.getBoundingClientRect().top;
-
-    // which line is the current word on relative to the first word
-    const lineNumber = Math.round((currentWordTop - firstWordTop) / lineHeight);
-
-    if (lineNumber > currentLineRef.current) {
-      currentLineRef.current = lineNumber;
-      if (lineNumber >= 2) {
-        setLineOffset((prev) => prev - lineHeight);
-      }
-    }
-  }, [input, started]);
+  }, [input, targetText, mounted, visibleLineStart]);
 
   const finishTest = (typedValue) => {
     clearInterval(timerRef.current);
@@ -177,11 +158,9 @@ function App() {
 
   const handleChange = (e) => {
     const value = e.target.value;
-
     if (!started && value.length === 1) {
       setStarted(true);
       startTimeRef.current = Date.now();
-
       if (mode === "ranked") {
         setTimeLeft(RANKED_TIME);
         timerRef.current = setInterval(() => {
@@ -196,15 +175,13 @@ function App() {
         }, 1000);
       }
     }
-
     setInput(value);
-
     if (mode === "normal" && value.length === targetText.length) {
       finishTest(value);
     }
   };
 
-  const handleReset = () => {
+  const resetState = () => {
     clearInterval(timerRef.current);
     setInput("");
     startTimeRef.current = null;
@@ -212,11 +189,12 @@ function App() {
     setWpm(null);
     setFinished(false);
     setTimeLeft(RANKED_TIME);
-    setLineOffset(0);
-    currentLineRef.current = 0;
-    lineHeightRef.current = null;
+    setLineStart(0);
     charsRef.current = [];
-    wordRefs.current = [];
+  };
+
+  const handleReset = () => {
+    resetState();
     if (mode === "normal") {
       setTargetText(quotesData[Math.floor(Math.random() * quotesData.length)].text);
     } else {
@@ -227,19 +205,8 @@ function App() {
 
   const handleModeSwitch = (newMode) => {
     if (newMode === mode) return;
-    clearInterval(timerRef.current);
+    resetState();
     setMode(newMode);
-    setInput("");
-    startTimeRef.current = null;
-    setStarted(false);
-    setWpm(null);
-    setFinished(false);
-    setTimeLeft(RANKED_TIME);
-    setLineOffset(0);
-    currentLineRef.current = 0;
-    lineHeightRef.current = null;
-    charsRef.current = [];
-    wordRefs.current = [];
     if (newMode === "normal") {
       setTargetText(quotesData[Math.floor(Math.random() * quotesData.length)].text);
     } else {
@@ -262,56 +229,69 @@ function App() {
     await supabase.auth.signOut();
   };
 
-  const words = targetText.split(" ");
-  let charIndex = 0;
-  const renderedWords = words.map((word, wi) => {
-    const chars = word.split("").map((char, ci) => {
-      const globalIndex = charIndex + ci;
-      let colorClass = "";
-      if (globalIndex < input.length) {
-        colorClass = input[globalIndex] === char ? "correct" : "incorrect";
+  // render only 3 visible lines
+  const visibleLines = lines.slice(visibleLineStart, visibleLineStart + 3);
+
+  // build char index offset for visible lines
+  const charOffset = useMemo(() => {
+    let offset = 0;
+    for (let li = 0; li < visibleLineStart; li++) {
+      for (let wi = 0; wi < lines[li].length; wi++) {
+        offset += lines[li][wi].length + 1;
       }
-      return (
+    }
+    return offset;
+  }, [visibleLineStart, lines]);
+
+  let localCharIndex = charOffset;
+  const renderedLines = visibleLines.map((lineWords, li) => {
+    const renderedWords = lineWords.map((word, wi) => {
+      const chars = word.split("").map((char, ci) => {
+        const globalIndex = localCharIndex + ci;
+        let colorClass = "";
+        if (globalIndex < input.length) {
+          colorClass = input[globalIndex] === char ? "correct" : "incorrect";
+        }
+        return (
+          <span
+            key={globalIndex}
+            className={colorClass}
+            ref={(el) => (charsRef.current[globalIndex] = el)}
+          >
+            {char}
+          </span>
+        );
+      });
+
+      const spaceIndex = localCharIndex + word.length;
+      const isLastWordInLastLine = li === visibleLines.length - 1 && wi === lineWords.length - 1;
+      const spaceEl = !isLastWordInLastLine ? (
         <span
-          key={globalIndex}
-          className={colorClass}
-          ref={(el) => (charsRef.current[globalIndex] = el)}
+          key={spaceIndex}
+          className={spaceIndex < input.length ? (input[spaceIndex] === " " ? "correct" : "incorrect") : ""}
+          ref={(el) => (charsRef.current[spaceIndex] = el)}
         >
-          {char}
+          {" "}
+        </span>
+      ) : null;
+
+      localCharIndex += word.length + 1;
+
+      return (
+        <span key={wi} style={{ display: "inline" }}>
+          {chars}{spaceEl}
         </span>
       );
     });
 
-    const spaceIndex = charIndex + word.length;
-    let spaceClass = "";
-    if (spaceIndex < input.length) {
-      spaceClass = input[spaceIndex] === " " ? "correct" : "incorrect";
-    }
-    const spaceEl = wi < words.length - 1 ? (
-      <span
-        key={spaceIndex}
-        className={spaceClass}
-        ref={(el) => (charsRef.current[spaceIndex] = el)}
-      >
-        {" "}
-      </span>
-    ) : null;
-
-    const wordEl = (
-      <span key={wi} ref={(el) => (wordRefs.current[wi] = el)} style={{ display: "inline" }}>
-        {chars}{spaceEl}
-      </span>
+    return (
+      <div key={li} style={{ whiteSpace: "nowrap" }}>
+        {renderedWords}
+      </div>
     );
-
-    charIndex += word.length + 1;
-    return wordEl;
   });
 
   const anyOverlay = showDashboard || showLeaderboard;
-  const LINE_HEIGHT_EM = 1.5;
-  const VISIBLE_LINES = 3;
-  const FONT_SIZE_PX = 32;
-  const containerHeight = LINE_HEIGHT_EM * VISIBLE_LINES * FONT_SIZE_PX;
 
   return (
     <div>
@@ -358,29 +338,11 @@ function App() {
         )}
         <div
           className={`test fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`}
-          style={{
-            position: "relative",
-            transform: "none",
-            top: "auto",
-            left: "auto",
-            height: `${containerHeight}px`,
-            overflow: "hidden",
-          }}
+          style={{ position: "relative", transform: "none", top: "auto", left: "auto" }}
           ref={testRef}
           onClick={() => inputRef.current?.focus()}
         >
-          <div
-            style={{
-              position: "relative",
-              top: `${lineOffset}px`,
-              transition: "top 0.15s ease",
-              lineHeight: `${LINE_HEIGHT_EM}em`,
-            }}
-          >
-            <p style={{ position: "relative", margin: 0 }}>
-              {renderedWords}
-            </p>
-          </div>
+          {renderedLines}
           <span ref={caretRef} className={`caret ${started ? "caret-active" : ""}`} />
           <input
             ref={inputRef}
@@ -410,12 +372,7 @@ function App() {
 
       <div className={`fade ${!showDashboard ? "fade-hidden" : ""}`}>
         {user && (
-          <Dashboard
-            user={user}
-            username={username}
-            onClose={handleCloseDashboard}
-            visible={showDashboard}
-          />
+          <Dashboard user={user} username={username} onClose={handleCloseDashboard} visible={showDashboard} />
         )}
       </div>
 
