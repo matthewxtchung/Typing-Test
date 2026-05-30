@@ -16,7 +16,7 @@ function App() {
     quotesData[Math.floor(Math.random() * quotesData.length)].text
   );
   const [input, setInput] = useState("");
-  const [startTime, setStartTime] = useState(null);
+  const [started, setStarted] = useState(false);
   const [wpm, setWpm] = useState(null);
   const [finished, setFinished] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -27,11 +27,15 @@ function App() {
   const [user, setUser] = useState(null);
   const [username, setUsername] = useState(null);
   const [timeLeft, setTimeLeft] = useState(RANKED_TIME);
+  const [lineOffset, setLineOffset] = useState(0);
 
   const inputRef = useRef(null);
   const caretRef = useRef(null);
   const charsRef = useRef([]);
   const timerRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const wordRefs = useRef([]);
+  const testRef = useRef(null);
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -59,22 +63,51 @@ function App() {
     if (data) setUsername(data.username);
   };
 
+  // caret positioning
   useEffect(() => {
     const measure = () => {
       const currentChar = charsRef.current[input.length];
-      if (!currentChar || !caretRef.current) return;
+      if (!currentChar || !caretRef.current || !testRef.current) return;
       const charRect = currentChar.getBoundingClientRect();
-      const testEl = document.querySelector(".test");
-      const testRect = testEl.getBoundingClientRect();
+      const testRect = testRef.current.getBoundingClientRect();
       caretRef.current.style.left = `${charRect.left - testRect.left}px`;
       caretRef.current.style.top = `${charRect.top - testRect.top}px`;
     };
     const frame = requestAnimationFrame(measure);
     return () => cancelAnimationFrame(frame);
-  }, [input, targetText, mounted]);
+  }, [input, targetText, mounted, lineOffset]);
 
-  const finishTest = (typedValue, endTime) => {
+  // line shifting: watch which line the current word is on
+  useEffect(() => {
+    if (!testRef.current) return;
+    const words = targetText.split(" ");
+    let charIndex = 0;
+    for (let i = 0; i < words.length; i++) {
+      const wordStart = charIndex;
+      const wordEnd = charIndex + words[i].length;
+      if (input.length >= wordStart && input.length <= wordEnd + 1) {
+        // current word is word i
+        const wordEl = wordRefs.current[i];
+        if (!wordEl || !testRef.current) break;
+        const testRect = testRef.current.getBoundingClientRect();
+        const wordRect = wordEl.getBoundingClientRect();
+        const relativeTop = wordRect.top - testRect.top + lineOffset;
+        const lineHeight = wordRect.height;
+        // if current word has moved past the first line, shift down
+        if (relativeTop > lineHeight * 0.5) {
+          setLineOffset((prev) => prev - lineHeight);
+        }
+        break;
+      }
+      charIndex += words[i].length + 1;
+    }
+  }, [input]);
+
+  const finishTest = (typedValue) => {
     clearInterval(timerRef.current);
+    const endTime = Date.now();
+    const startTime = startTimeRef.current;
+    if (!startTime) return;
     const timeTakenMinutes = (endTime - startTime) / 1000 / 60;
     const targetWords = targetText.split(" ");
     const typedWords = typedValue.split(" ");
@@ -96,12 +129,39 @@ function App() {
     }
   };
 
+  const finishRanked = () => {
+    clearInterval(timerRef.current);
+    const endTime = Date.now();
+    const startTime = startTimeRef.current;
+    if (!startTime) return;
+    const timeTakenMinutes = (endTime - startTime) / 1000 / 60;
+    const currentInput = inputRef.current?.value ?? "";
+    const targetWords = targetText.split(" ");
+    const typedWords = currentInput.split(" ");
+    let correctChars = 0;
+    for (let i = 0; i < typedWords.length; i++) {
+      if (typedWords[i] === targetWords[i]) {
+        correctChars += targetWords[i].length;
+        if (i < typedWords.length - 1) correctChars += 1;
+      }
+    }
+    const wordsTyped = correctChars / 5;
+    const wpmCalc = timeTakenMinutes > 0 ? Math.round(wordsTyped / timeTakenMinutes) : 0;
+    setWpm(wpmCalc);
+    setFinished(true);
+    if (user) {
+      supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc }).then(({ error }) => {
+        console.log("insert result:", error ?? "success");
+      });
+    }
+  };
+
   const handleChange = (e) => {
     const value = e.target.value;
 
-    if (!startTime && value.length === 1) {
-      const now = Date.now();
-      setStartTime(now);
+    if (!started && value.length === 1) {
+      setStarted(true);
+      startTimeRef.current = Date.now();
 
       if (mode === "ranked") {
         setTimeLeft(RANKED_TIME);
@@ -109,7 +169,7 @@ function App() {
           setTimeLeft((prev) => {
             if (prev <= 1) {
               clearInterval(timerRef.current);
-              finishTest(value, now + RANKED_TIME * 1000);
+              finishRanked();
               return 0;
             }
             return prev - 1;
@@ -121,18 +181,21 @@ function App() {
     setInput(value);
 
     if (mode === "normal" && value.length === targetText.length) {
-      finishTest(value, Date.now());
+      finishTest(value);
     }
   };
 
   const handleReset = () => {
     clearInterval(timerRef.current);
     setInput("");
-    setStartTime(null);
+    startTimeRef.current = null;
+    setStarted(false);
     setWpm(null);
     setFinished(false);
     setTimeLeft(RANKED_TIME);
+    setLineOffset(0);
     charsRef.current = [];
+    wordRefs.current = [];
     if (mode === "normal") {
       setTargetText(quotesData[Math.floor(Math.random() * quotesData.length)].text);
     } else {
@@ -146,11 +209,14 @@ function App() {
     clearInterval(timerRef.current);
     setMode(newMode);
     setInput("");
-    setStartTime(null);
+    startTimeRef.current = null;
+    setStarted(false);
     setWpm(null);
     setFinished(false);
     setTimeLeft(RANKED_TIME);
+    setLineOffset(0);
     charsRef.current = [];
+    wordRefs.current = [];
     if (newMode === "normal") {
       setTargetText(quotesData[Math.floor(Math.random() * quotesData.length)].text);
     } else {
@@ -173,19 +239,58 @@ function App() {
     await supabase.auth.signOut();
   };
 
-  const renderedText = targetText.split("").map((char, i) => {
-    let colorClass = "";
-    if (i < input.length) {
-      colorClass = input[i] === char ? "correct" : "incorrect";
+  // build rendered chars with word refs for line tracking
+  const words = targetText.split(" ");
+  let charIndex = 0;
+  const renderedWords = words.map((word, wi) => {
+    const chars = word.split("").map((char, ci) => {
+      const globalIndex = charIndex + ci;
+      let colorClass = "";
+      if (globalIndex < input.length) {
+        colorClass = input[globalIndex] === char ? "correct" : "incorrect";
+      }
+      return (
+        <span
+          key={globalIndex}
+          className={colorClass}
+          ref={(el) => (charsRef.current[globalIndex] = el)}
+        >
+          {char}
+        </span>
+      );
+    });
+
+    // space after word
+    const spaceIndex = charIndex + word.length;
+    let spaceClass = "";
+    if (spaceIndex < input.length) {
+      spaceClass = input[spaceIndex] === " " ? "correct" : "incorrect";
     }
-    return (
-      <span key={i} className={colorClass} ref={(el) => (charsRef.current[i] = el)}>
-        {char}
+    const spaceEl = wi < words.length - 1 ? (
+      <span
+        key={spaceIndex}
+        className={spaceClass}
+        ref={(el) => (charsRef.current[spaceIndex] = el)}
+      >
+        {" "}
+      </span>
+    ) : null;
+
+    const wordEl = (
+      <span key={wi} ref={(el) => (wordRefs.current[wi] = el)} style={{ display: "inline" }}>
+        {chars}{spaceEl}
       </span>
     );
+
+    charIndex += word.length + 1;
+    return wordEl;
   });
 
   const anyOverlay = showDashboard || showLeaderboard;
+  const LINE_HEIGHT_EM = 1.5;
+  const VISIBLE_LINES = 3;
+  const FONT_SIZE_PX = 32;
+  const containerHeight = LINE_HEIGHT_EM * VISIBLE_LINES * FONT_SIZE_PX;
 
   return (
     <div>
@@ -227,18 +332,35 @@ function App() {
       </header>
 
       <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "2rem" }}>
-        {mode === "ranked" && startTime && !finished && (
+        {mode === "ranked" && started && !finished && (
           <p className="ranked-timer">{timeLeft}</p>
         )}
         <div
           className={`test fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`}
-          style={{ position: "relative", transform: "none", top: "auto", left: "auto" }}
+          style={{
+            position: "relative",
+            transform: "none",
+            top: "auto",
+            left: "auto",
+            height: `${containerHeight}px`,
+            overflow: "hidden",
+          }}
+          ref={testRef}
           onClick={() => inputRef.current?.focus()}
         >
-          <p style={{ position: "relative" }}>
-            {renderedText}
-          </p>
-          <span ref={caretRef} className={`caret ${startTime ? "caret-active" : ""}`} />
+          <div
+            style={{
+              position: "relative",
+              top: `${lineOffset}px`,
+              transition: "top 0.15s ease",
+              lineHeight: `${LINE_HEIGHT_EM}em`,
+            }}
+          >
+            <p style={{ position: "relative", margin: 0 }}>
+              {renderedWords}
+            </p>
+          </div>
+          <span ref={caretRef} className={`caret ${started ? "caret-active" : ""}`} />
           <input
             ref={inputRef}
             type="text"
