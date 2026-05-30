@@ -177,3 +177,42 @@ h1 {
   color: #cba6f7;
 }
 
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mode-button {
+  background: none;
+  border: none;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 14px;
+  color: #6c7086;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.mode-button:hover {
+  color: #cdd6f4;
+}
+
+.mode-button-active {
+  color: #cba6f7;
+}
+
+.mode-divider {
+  color: #313244;
+  font-family: 'Source Code Pro', monospace;
+}
+
+.ranked-timer {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 24px;
+  color: #6c7086;
+}
+

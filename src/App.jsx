@@ -1,13 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
 import quotesData from "./quotes.json";
+import { generateWords } from "./words";
 import knightLogo from "./assets/icon.png";
 import AuthModal from "./AuthModal";
 import Dashboard from "./Dashboard";
 import Leaderboard from "./Leaderboard";
 import { supabase } from "./supabaseClient";
 
+const RANKED_TIME = 15;
+
 function App() {
+  const [mode, setMode] = useState("normal");
   const [targetText, setTargetText] = useState(
     quotesData[Math.floor(Math.random() * quotesData.length)].text
   );
@@ -22,10 +26,12 @@ function App() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [user, setUser] = useState(null);
   const [username, setUsername] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(RANKED_TIME);
 
   const inputRef = useRef(null);
   const caretRef = useRef(null);
   const charsRef = useRef([]);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -57,56 +63,99 @@ function App() {
     const measure = () => {
       const currentChar = charsRef.current[input.length];
       if (!currentChar || !caretRef.current) return;
-
       const charRect = currentChar.getBoundingClientRect();
       const testEl = document.querySelector(".test");
       const testRect = testEl.getBoundingClientRect();
-
       caretRef.current.style.left = `${charRect.left - testRect.left}px`;
       caretRef.current.style.top = `${charRect.top - testRect.top}px`;
     };
-
     const frame = requestAnimationFrame(measure);
     return () => cancelAnimationFrame(frame);
   }, [input, targetText, mounted]);
 
+  const finishTest = (typedValue, endTime) => {
+    clearInterval(timerRef.current);
+    const timeTakenMinutes = (endTime - startTime) / 1000 / 60;
+    const targetWords = targetText.split(" ");
+    const typedWords = typedValue.split(" ");
+    let correctChars = 0;
+    for (let i = 0; i < targetWords.length; i++) {
+      if (typedWords[i] === targetWords[i]) {
+        correctChars += targetWords[i].length;
+        if (i < targetWords.length - 1) correctChars += 1;
+      }
+    }
+    const wordsTyped = correctChars / 5;
+    const wpmCalc = timeTakenMinutes > 0 ? Math.round(wordsTyped / timeTakenMinutes) : 0;
+    setWpm(wpmCalc);
+    setFinished(true);
+    if (user) {
+      supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc }).then(({ error }) => {
+        console.log("insert result:", error ?? "success");
+      });
+    }
+  };
+
   const handleChange = (e) => {
     const value = e.target.value;
-    if (!startTime && value.length === 1) setStartTime(Date.now());
+
+    if (!startTime && value.length === 1) {
+      const now = Date.now();
+      setStartTime(now);
+
+      if (mode === "ranked") {
+        setTimeLeft(RANKED_TIME);
+        timerRef.current = setInterval(() => {
+          setTimeLeft((prev) => {
+            if (prev <= 1) {
+              clearInterval(timerRef.current);
+              finishTest(value, now + RANKED_TIME * 1000);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
+    }
+
     setInput(value);
 
-    if (value.length === targetText.length) {
-      const endTime = Date.now();
-      const timeTakenMinutes = (endTime - startTime) / 1000 / 60;
-      const targetWords = targetText.split(" ");
-      const typedWords = value.split(" ");
-      let correctChars = 0;
-      for (let i = 0; i < targetWords.length; i++) {
-        if (typedWords[i] === targetWords[i]) {
-          correctChars += targetWords[i].length;
-          if (i < targetWords.length - 1) correctChars += 1;
-        }
-      }
-      const wordsTyped = correctChars / 5;
-      const wpmCalc = timeTakenMinutes > 0 ? Math.round(wordsTyped / timeTakenMinutes) : 0;
-      setWpm(wpmCalc);
-      setFinished(true);
-
-      if (user) {
-        supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc }).then(({ error }) => {
-          console.log("insert result:", error ?? "success");
-        });
-      }
+    if (mode === "normal" && value.length === targetText.length) {
+      finishTest(value, Date.now());
     }
   };
 
   const handleReset = () => {
+    clearInterval(timerRef.current);
     setInput("");
     setStartTime(null);
     setWpm(null);
     setFinished(false);
+    setTimeLeft(RANKED_TIME);
     charsRef.current = [];
-    setTargetText(quotesData[Math.floor(Math.random() * quotesData.length)].text);
+    if (mode === "normal") {
+      setTargetText(quotesData[Math.floor(Math.random() * quotesData.length)].text);
+    } else {
+      setTargetText(generateWords(120));
+    }
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleModeSwitch = (newMode) => {
+    if (newMode === mode) return;
+    clearInterval(timerRef.current);
+    setMode(newMode);
+    setInput("");
+    setStartTime(null);
+    setWpm(null);
+    setFinished(false);
+    setTimeLeft(RANKED_TIME);
+    charsRef.current = [];
+    if (newMode === "normal") {
+      setTargetText(quotesData[Math.floor(Math.random() * quotesData.length)].text);
+    } else {
+      setTargetText(generateWords(120));
+    }
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
@@ -144,6 +193,21 @@ function App() {
         <div className="header-content">
           <img src={knightLogo} alt="Knight Logo" className="logo" />
           <h1>Sir Types-A-Lot</h1>
+          <div className="header-center">
+            <button
+              className={`mode-button ${mode === "normal" ? "mode-button-active" : ""}`}
+              onClick={() => handleModeSwitch("normal")}
+            >
+              normal
+            </button>
+            <span className="mode-divider">|</span>
+            <button
+              className={`mode-button ${mode === "ranked" ? "mode-button-active" : ""}`}
+              onClick={() => handleModeSwitch("ranked")}
+            >
+              ranked
+            </button>
+          </div>
           <div className="header-right">
             <div className="user-info">
               <button className="user-button" onClick={() => setShowLeaderboard(true)}>leaderboard</button>
@@ -163,7 +227,14 @@ function App() {
       </header>
 
       <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "2rem" }}>
-        <div className={`test fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`} style={{ position: "relative", transform: "none", top: "auto", left: "auto" }} onClick={() => inputRef.current?.focus()}>
+        {mode === "ranked" && startTime && !finished && (
+          <p className="ranked-timer">{timeLeft}</p>
+        )}
+        <div
+          className={`test fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`}
+          style={{ position: "relative", transform: "none", top: "auto", left: "auto" }}
+          onClick={() => inputRef.current?.focus()}
+        >
           <p style={{ position: "relative" }}>
             {renderedText}
           </p>
@@ -180,9 +251,11 @@ function App() {
             }}
           />
         </div>
-        <div className={`fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`}>
-          <button className="user-button" onClick={handleReset}>reset</button>
-        </div>
+        {mode === "normal" && (
+          <div className={`fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`}>
+            <button className="user-button" onClick={handleReset}>reset</button>
+          </div>
+        )}
       </div>
 
       <div className={`result-screen fade ${!finished || anyOverlay ? "fade-hidden" : ""}`}>
@@ -204,10 +277,7 @@ function App() {
       </div>
 
       <div className={`fade ${!showLeaderboard ? "fade-hidden" : ""}`}>
-        <Leaderboard
-          onClose={handleCloseLeaderboard}
-          username={username}
-        />
+        <Leaderboard onClose={handleCloseLeaderboard} username={username} />
       </div>
 
       {showAuth && (
