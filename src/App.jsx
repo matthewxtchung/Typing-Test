@@ -368,7 +368,7 @@ function App() {
     }
     resetState();
     setMode(newMode);
-    if (newMode === "ranked" && !localStorage.getItem("ranked_seen")) {
+    if (newMode === "ranked") {
       setShowRankedModal(true);
     }
     if (newMode === "normal") {
@@ -675,7 +675,6 @@ function App() {
       )}
       {showRankedModal && (
         <RankedModal onClose={() => {
-          localStorage.setItem("ranked_seen", "1");
           setShowRankedModal(false);
           setTimeout(() => inputRef.current?.focus(), 0);
         }} />

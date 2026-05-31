@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { supabase } from "./supabaseClient";
 import "./AuthModal.css";
 
@@ -9,6 +9,7 @@ function AuthModal({ onClose, onAuth }) {
   const [username, setUsername] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const mouseDownOnOverlay = useRef(false);
 
   const handleSubmit = async () => {
     setError(null);
@@ -39,8 +40,12 @@ function AuthModal({ onClose, onAuth }) {
   };
 
   return (
-    <div className="auth-overlay" onClick={onClose}>
-      <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="auth-overlay"
+      onMouseDown={(e) => { mouseDownOnOverlay.current = e.target === e.currentTarget; }}
+      onMouseUp={(e) => { if (mouseDownOnOverlay.current && e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="auth-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="auth-tabs">
           <button
             className={`auth-tab ${mode === "login" ? "active" : ""}`}
