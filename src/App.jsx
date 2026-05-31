@@ -99,22 +99,17 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Set localStorage flag when a ranked test starts, clear it when it ends
+  // On page load, fetchProfile will detect the flag and apply the penalty
   useEffect(() => {
     const handleUnload = () => {
-      if (rankedStartedRef.current && user) {
-        const payload = JSON.stringify({
-          test_in_progress: false,
-          elo: Math.max(0, profileElo + ABANDON_PENALTY),
-        });
-        navigator.sendBeacon(
-          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
-          new Blob([payload], { type: "application/json" })
-        );
+      if (rankedStartedRef.current) {
+        localStorage.setItem("ranked_abandoned", "1");
       }
     };
     window.addEventListener("beforeunload", handleUnload);
     return () => window.removeEventListener("beforeunload", handleUnload);
-  }, [user, profileElo]);
+  }, []);
 
   const fetchProfile = async (userId) => {
     const { data } = await supabase
@@ -126,15 +121,22 @@ function App() {
       setUsername(data.username);
       const placements = data.placement_results ?? [];
       setPlacementResults(placements);
-      if (data.test_in_progress) {
-        const penalisedElo = Math.max(0, (data.elo ?? 0) + ABANDON_PENALTY);
+
+      let currentElo = data.elo ?? 0;
+
+      // Apply penalty if they refreshed mid-test (localStorage flag) or
+      // test_in_progress was left true (e.g. browser crashed)
+      const abandoned = localStorage.getItem("ranked_abandoned");
+      if (abandoned || data.test_in_progress) {
+        localStorage.removeItem("ranked_abandoned");
+        const penalisedElo = Math.max(0, currentElo + ABANDON_PENALTY);
         setProfileElo(penalisedElo);
         await supabase
           .from("profiles")
           .update({ test_in_progress: false, elo: penalisedElo })
           .eq("id", userId);
       } else {
-        setProfileElo(data.elo ?? 0);
+        setProfileElo(currentElo);
       }
     }
   };
@@ -213,6 +215,7 @@ function App() {
     clearInterval(timerRef.current);
     finishedRef.current = true;
     rankedStartedRef.current = false;
+    localStorage.removeItem("ranked_abandoned");
     const currentInput = inputRef2.current;
     const { wpmCalc, accCalc, errCount } = computeStats(currentInput, targetText);
     setWpm(wpmCalc);
@@ -273,6 +276,7 @@ function App() {
       startTimeRef.current = Date.now();
       if (mode === "ranked") {
         rankedStartedRef.current = true;
+        localStorage.setItem("ranked_abandoned", "1");
         if (user) {
           supabase.from("profiles").update({ test_in_progress: true }).eq("id", user.id);
         }
@@ -313,6 +317,7 @@ function App() {
   const applyAbandonPenalty = async () => {
     if (!user || !rankedStartedRef.current) return;
     rankedStartedRef.current = false;
+    localStorage.removeItem("ranked_abandoned");
     clearInterval(timerRef.current);
     const penalisedElo = Math.max(0, profileElo + ABANDON_PENALTY);
     setProfileElo(penalisedElo);
