@@ -212,7 +212,7 @@ function App() {
     clearInterval(timerRef.current);
     finishedRef.current = true;
     rankedStartedRef.current = false;
-    const currentInput = inputRef.current?.value ?? "";
+    const currentInput = input;
     const { wpmCalc, accCalc, errCount } = computeStats(currentInput, targetText);
     setWpm(wpmCalc);
     setAccuracy(accCalc);
