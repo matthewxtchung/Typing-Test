@@ -67,6 +67,10 @@ function App() {
   const [isPlacement, setIsPlacement] = useState(false);
   const [dashRefreshKey, setDashRefreshKey] = useState(0);
 
+  // Keep refs in sync so async functions always read current values
+  useEffect(() => { placementResultsRef.current = placementResults; }, [placementResults]);
+  useEffect(() => { profileEloRef.current = profileElo; }, [profileElo]);
+
   const inputRef = useRef(null);
   const caretRef = useRef(null);
   const charsRef = useRef([]);
@@ -77,6 +81,8 @@ function App() {
   const rankedStartedRef = useRef(false);
   const inputRef2 = useRef("");
   const finishedRef = useRef(false);
+  const placementResultsRef = useRef([]);
+  const profileEloRef = useRef(0);
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -237,19 +243,21 @@ function App() {
 
     if (!user) return;
 
-    const newPlacements = [...placementResults];
-    let newElo = profileElo;
+    const newPlacements = [...placementResultsRef.current];
+    let newElo = profileEloRef.current;
     let change = null;
 
     if (newPlacements.length < PLACEMENT_COUNT) {
       newPlacements.push(rawWpm);
       setPlacementResults(newPlacements);
+      placementResultsRef.current = newPlacements;
       setIsPlacement(true);
 
       if (newPlacements.length === PLACEMENT_COUNT) {
         const avgWpm = newPlacements.reduce((a, b) => a + b, 0) / PLACEMENT_COUNT;
         newElo = wpmToElo(avgWpm);
         setProfileElo(newElo);
+        profileEloRef.current = newElo;
         change = null;
       }
 
@@ -264,10 +272,11 @@ function App() {
       setDashRefreshKey((k) => k + 1);
     } else {
       setIsPlacement(false);
-      change = calcEloChange(profileElo, rawWpm);
-      newElo = Math.max(0, profileElo + change);
+      change = calcEloChange(profileEloRef.current, rawWpm);
+      newElo = Math.max(0, profileEloRef.current + change);
       setEloChange(change);
       setProfileElo(newElo);
+      profileEloRef.current = newElo;
 
       await supabase.from("profiles").update({
         elo: newElo,
@@ -331,7 +340,7 @@ function App() {
     rankedStartedRef.current = false;
     localStorage.removeItem("ranked_abandoned");
     clearInterval(timerRef.current);
-    const penalisedElo = Math.max(0, profileElo + ABANDON_PENALTY);
+    const penalisedElo = Math.max(0, profileEloRef.current + ABANDON_PENALTY);
     setProfileElo(penalisedElo);
     await supabase.from("profiles").update({
       elo: penalisedElo,
