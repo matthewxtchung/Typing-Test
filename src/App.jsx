@@ -10,6 +10,32 @@ import { supabase } from "./supabaseClient";
 
 const RANKED_TIME = 15;
 const WORDS_PER_LINE = 10;
+const PLACEMENT_COUNT = 10;
+const ABANDON_PENALTY = -150;
+
+// ELO <-> WPM conversion
+export const wpmToElo = (wpm) => wpm * 10;
+export const eloToWpm = (elo) => elo / 10;
+
+export const RANKS = [
+  { name: "Iron",        min: 0,    max: 400,  color: "#6c7086" },
+  { name: "Bronze",      min: 400,  max: 600,  color: "#e8a87c" },
+  { name: "Silver",      min: 600,  max: 800,  color: "#a6adc8" },
+  { name: "Gold",        min: 800,  max: 1000, color: "#f9e2af" },
+  { name: "Platinum",    min: 1000, max: 1100, color: "#94e2d5" },
+  { name: "Diamond",     min: 1100, max: 1200, color: "#89dceb" },
+  { name: "Master",      min: 1200, max: 1400, color: "#cba6f7" },
+  { name: "Grandmaster", min: 1400, max: Infinity, color: "#f38ba8" },
+];
+
+export const getRank = (elo) => RANKS.find((r) => elo >= r.min && elo < r.max) ?? RANKS[0];
+
+export const calcEloChange = (currentElo, actualWpm) => {
+  const expectedWpm = eloToWpm(currentElo);
+  const delta = actualWpm - expectedWpm;
+  const change = Math.round(delta * 5);
+  return Math.max(-150, Math.min(150, change));
+};
 
 function App() {
   const [mode, setMode] = useState("normal");
@@ -33,6 +59,12 @@ function App() {
   const [lineStart, setLineStart] = useState(0);
   const [isShifting, setIsShifting] = useState(false);
 
+  // Ranked / ELO state
+  const [profileElo, setProfileElo] = useState(0);
+  const [placementResults, setPlacementResults] = useState([]);
+  const [eloChange, setEloChange] = useState(null);
+  const [isPlacement, setIsPlacement] = useState(false);
+
   const inputRef = useRef(null);
   const caretRef = useRef(null);
   const charsRef = useRef([]);
@@ -40,6 +72,8 @@ function App() {
   const startTimeRef = useRef(null);
   const testRef = useRef(null);
   const prevVisibleLineStartRef = useRef(0);
+  // Track whether ranked test was started for abandon detection
+  const rankedStartedRef = useRef(false);
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -48,23 +82,61 @@ function App() {
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchUsername(session.user.id);
+      if (session?.user) fetchProfile(session.user.id);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchUsername(session.user.id);
-      else setUsername(null);
+      if (session?.user) fetchProfile(session.user.id);
+      else {
+        setUsername(null);
+        setProfileElo(0);
+        setPlacementResults([]);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUsername = async (userId) => {
+  // Abandon penalty on page unload if ranked test in progress
+  useEffect(() => {
+    const handleUnload = () => {
+      if (rankedStartedRef.current && user) {
+        // Use sendBeacon for reliable unload-time request
+        const payload = JSON.stringify({
+          test_in_progress: false,
+          elo: Math.max(0, profileElo + ABANDON_PENALTY),
+        });
+        navigator.sendBeacon(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/profiles?id=eq.${user.id}`,
+          new Blob([payload], { type: "application/json" })
+        );
+      }
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    return () => window.removeEventListener("beforeunload", handleUnload);
+  }, [user, profileElo]);
+
+  const fetchProfile = async (userId) => {
     const { data } = await supabase
       .from("profiles")
-      .select("username")
+      .select("username, elo, placement_results, test_in_progress")
       .eq("id", userId)
       .single();
-    if (data) setUsername(data.username);
+    if (data) {
+      setUsername(data.username);
+      const placements = data.placement_results ?? [];
+      setPlacementResults(placements);
+      // Check for abandoned test from last session
+      if (data.test_in_progress) {
+        const penalisedElo = Math.max(0, (data.elo ?? 0) + ABANDON_PENALTY);
+        setProfileElo(penalisedElo);
+        await supabase
+          .from("profiles")
+          .update({ test_in_progress: false, elo: penalisedElo })
+          .eq("id", userId);
+      } else {
+        setProfileElo(data.elo ?? 0);
+      }
+    }
   };
 
   const words = useMemo(() => targetText.split(" "), [targetText]);
@@ -88,7 +160,6 @@ function App() {
   const currentLine = Math.floor(currentWordIndex / WORDS_PER_LINE);
   const visibleLineStart = Math.max(0, currentLine - 1);
 
-  // Trigger shift animation when visibleLineStart increments
   useEffect(() => {
     if (visibleLineStart > prevVisibleLineStartRef.current) {
       setIsShifting(true);
@@ -129,24 +200,59 @@ function App() {
     setErrors(errCount);
     setFinished(true);
     if (user) {
-      supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc }).then(({ error }) => {
-        console.log("insert result:", error ?? "success");
-      });
+      supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc });
     }
   };
 
-  const finishRanked = () => {
+  const finishRanked = async () => {
     clearInterval(timerRef.current);
+    rankedStartedRef.current = false;
     const currentInput = inputRef.current?.value ?? "";
     const { wpmCalc, accCalc, errCount } = computeStats(currentInput, targetText);
     setWpm(wpmCalc);
     setAccuracy(accCalc);
     setErrors(errCount);
     setFinished(true);
-    if (user) {
-      supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc }).then(({ error }) => {
-        console.log("insert result:", error ?? "success");
-      });
+
+    if (!user) return;
+
+    const newPlacements = [...placementResults];
+    let newElo = profileElo;
+    let change = null;
+
+    if (newPlacements.length < PLACEMENT_COUNT) {
+      // Still in placement
+      newPlacements.push(wpmCalc);
+      setPlacementResults(newPlacements);
+      setIsPlacement(true);
+
+      if (newPlacements.length === PLACEMENT_COUNT) {
+        // Final placement test — compute starting ELO
+        const avgWpm = Math.round(newPlacements.reduce((a, b) => a + b, 0) / PLACEMENT_COUNT);
+        newElo = wpmToElo(avgWpm);
+        setProfileElo(newElo);
+        change = null; // No change shown on final placement, just reveal ELO
+      }
+
+      await supabase.from("profiles").update({
+        placement_results: newPlacements,
+        elo: newElo,
+        test_in_progress: false,
+      }).eq("id", user.id);
+    } else {
+      // Ranked game — calc ELO delta
+      setIsPlacement(false);
+      change = calcEloChange(profileElo, wpmCalc);
+      newElo = Math.max(0, profileElo + change);
+      setEloChange(change);
+      setProfileElo(newElo);
+
+      await supabase.from("profiles").update({
+        elo: newElo,
+        test_in_progress: false,
+      }).eq("id", user.id);
+
+      await supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc, elo_change: change });
     }
   };
 
@@ -156,6 +262,11 @@ function App() {
       setStarted(true);
       startTimeRef.current = Date.now();
       if (mode === "ranked") {
+        rankedStartedRef.current = true;
+        // Mark test in progress in Supabase
+        if (user) {
+          supabase.from("profiles").update({ test_in_progress: true }).eq("id", user.id);
+        }
         setTimeLeft(RANKED_TIME);
         timerRef.current = setInterval(() => {
           setTimeLeft((prev) => {
@@ -183,6 +294,17 @@ function App() {
     }
   };
 
+  const applyAbandonPenalty = async () => {
+    if (!user || !rankedStartedRef.current) return;
+    rankedStartedRef.current = false;
+    const penalisedElo = Math.max(0, profileElo + ABANDON_PENALTY);
+    setProfileElo(penalisedElo);
+    await supabase.from("profiles").update({
+      elo: penalisedElo,
+      test_in_progress: false,
+    }).eq("id", user.id);
+  };
+
   const resetState = () => {
     clearInterval(timerRef.current);
     setInput("");
@@ -192,6 +314,8 @@ function App() {
     setAccuracy(null);
     setErrors(null);
     setFinished(false);
+    setEloChange(null);
+    setIsPlacement(false);
     setTimeLeft(RANKED_TIME);
     setLineStart(0);
     setIsShifting(false);
@@ -209,8 +333,12 @@ function App() {
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  const handleModeSwitch = (newMode) => {
+  const handleModeSwitch = async (newMode) => {
     if (newMode === mode) return;
+    // Apply abandon penalty if switching away from a started ranked test
+    if (mode === "ranked" && rankedStartedRef.current) {
+      await applyAbandonPenalty();
+    }
     resetState();
     setMode(newMode);
     if (newMode === "normal") {
@@ -296,6 +424,9 @@ function App() {
   });
 
   const anyOverlay = showDashboard || showLeaderboard;
+  const placementDone = placementResults.length >= PLACEMENT_COUNT;
+  const currentRank = placementDone ? getRank(profileElo) : null;
+  const placementProgress = Math.min(placementResults.length, PLACEMENT_COUNT);
 
   return (
     <div>
@@ -348,6 +479,25 @@ function App() {
           <span className="stat-value">{started && accuracy != null ? accuracy + "%" : "—"}</span>
           <span className="stat-label">acc</span>
         </div>
+        {/* Ranked: show ELO or placement progress */}
+        {mode === "ranked" && user && !started && (
+          <>
+            <div className="stat-divider" />
+            <div className="stat-item">
+              {placementDone ? (
+                <>
+                  <span className="stat-value" style={{ color: currentRank.color }}>{profileElo}</span>
+                  <span className="stat-label" style={{ color: currentRank.color }}>{currentRank.name}</span>
+                </>
+              ) : (
+                <>
+                  <span className="stat-value">{placementProgress}<span style={{ fontSize: "16px", color: "#45475a" }}>/10</span></span>
+                  <span className="stat-label">placement</span>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Center column */}
@@ -382,7 +532,7 @@ function App() {
           />
         </div>
 
-        {/* Reset row */}
+        {/* Reset row — normal mode only */}
         <div className="reset-row">
           {mode === "normal" && !finished && (
             <button className="user-button" onClick={handleNext}>reset</button>
@@ -393,6 +543,32 @@ function App() {
 
       {/* Result screen */}
       <div className={`result-screen fade ${!finished ? "fade-hidden" : ""}`}>
+        {/* Ranked result extras */}
+        {mode === "ranked" && user && (
+          <div className="result-ranked-header">
+            {!placementDone || isPlacement ? (
+              <p className="result-placement-label">
+                placement {Math.min(placementResults.length, PLACEMENT_COUNT)}/{PLACEMENT_COUNT}
+                {placementResults.length >= PLACEMENT_COUNT && (
+                  <span style={{ color: currentRank?.color ?? "#cba6f7", marginLeft: 12 }}>
+                    → {currentRank?.name} ({profileElo} ELO)
+                  </span>
+                )}
+              </p>
+            ) : (
+              <div className="result-elo-row">
+                <span className="result-rank-badge" style={{ color: currentRank.color }}>{currentRank.name}</span>
+                <span className="result-elo-value">{profileElo}</span>
+                {eloChange !== null && (
+                  <span className={`result-elo-change ${eloChange >= 0 ? "elo-gain" : "elo-loss"}`}>
+                    {eloChange >= 0 ? "+" : ""}{eloChange}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <p className="result-wpm-label">words per minute</p>
         <p className="result-wpm">{wpm}</p>
         <p className="result-wpm-unit"></p>
@@ -410,12 +586,21 @@ function App() {
             <span className="result-stat-label">errors</span>
           </div>
         </div>
-        <button onClick={handleNext} className="user-button">next quote →</button>
+        <button onClick={handleNext} className="user-button">
+          {mode === "ranked" ? "next →" : "next quote →"}
+        </button>
       </div>
 
       <div className={`fade ${!showDashboard ? "fade-hidden" : ""}`}>
         {user && (
-          <Dashboard user={user} username={username} onClose={handleCloseDashboard} visible={showDashboard} />
+          <Dashboard
+            user={user}
+            username={username}
+            onClose={handleCloseDashboard}
+            visible={showDashboard}
+            profileElo={profileElo}
+            placementResults={placementResults}
+          />
         )}
       </div>
 
@@ -426,7 +611,7 @@ function App() {
       {showAuth && (
         <AuthModal
           onClose={() => { setShowAuth(false); setTimeout(() => inputRef.current?.focus(), 0); }}
-          onAuth={(u) => { setUser(u); fetchUsername(u.id); }}
+          onAuth={(u) => { setUser(u); fetchProfile(u.id); }}
         />
       )}
     </div>

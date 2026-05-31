@@ -39,6 +39,72 @@
   color: #6c7086;
 }
 
+/* Rank section */
+.dash-rank-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-rank-name {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.dash-elo-value {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 64px;
+  color: #cdd6f4;
+  line-height: 1;
+}
+
+.dash-elo-unit {
+  font-size: 20px;
+  color: #6c7086;
+}
+
+.dash-elo-next {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 12px;
+  color: #6c7086;
+  margin-top: 4px;
+}
+
+.dash-elo-next-wpm {
+  color: #45475a;
+}
+
+.dash-rank-bar-wrap {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.dash-rank-pip {
+  width: 28px;
+  height: 4px;
+  border-radius: 2px;
+  transition: background 0.2s ease;
+}
+
+/* Placement */
+.dash-placement-info {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 28px;
+  color: #cba6f7;
+}
+
+.dash-placement-sub {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 12px;
+  color: #45475a;
+  text-align: center;
+}
+
+/* Stats */
 .dash-stats {
   display: flex;
   align-items: center;

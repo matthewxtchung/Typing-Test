@@ -42,7 +42,6 @@ h1 {
   color: #cba6f7;
 }
 
-/* Stats bar: fixed to viewport at a set position, never moves */
 .stats-bar {
   position: fixed;
   top: 270px;
@@ -86,8 +85,6 @@ h1 {
   background: #313244;
 }
 
-/* Center column: anchored so the top of the text is always at the same place.
-   top = header height + stats bar height + gap. Text expands downward from here. */
 .center-column {
   position: fixed;
   top: 320px;
@@ -124,14 +121,14 @@ h1 {
   flex-shrink: 0;
 }
 
-/* Line shift animation — new content slides up into place */
+/* Line shift animation */
 @keyframes lineShift {
   0%   { transform: translateY(1.5em); }
   100% { transform: translateY(0px); }
 }
 
 .line-shifting {
-  animation: lineShift 0.05s ease-out forwards;
+  animation: lineShift 0.1s ease-out forwards;
 }
 
 .reset-row {
@@ -182,6 +179,7 @@ h1 {
   color: #f38ba8;
 }
 
+/* Result screen */
 .result-screen {
   position: fixed;
   top: 50%;
@@ -191,6 +189,53 @@ h1 {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.result-ranked-header {
+  margin-bottom: 24px;
+}
+
+.result-placement-label {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #6c7086;
+}
+
+.result-elo-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  justify-content: center;
+}
+
+.result-rank-badge {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.result-elo-value {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 28px;
+  color: #cdd6f4;
+  line-height: 1;
+}
+
+.result-elo-change {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.elo-gain {
+  color: #a6e3a1;
+}
+
+.elo-loss {
+  color: #f38ba8;
 }
 
 .result-wpm-label {
