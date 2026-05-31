@@ -252,3 +252,10 @@
 .dash-lb-you .dash-lb-username-btn {
   color: #cba6f7;
 }
+
+.dash-rank-range {
+  font-size: 11px;
+  color: #6c7086;
+  letter-spacing: 1px;
+  text-transform: none;
+}

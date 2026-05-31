@@ -44,6 +44,12 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
   const nextRank = placementDone ? RANKS.find((r) => r.min > profileElo) ?? null : null;
   const eloToNext = nextRank ? nextRank.min - profileElo : null;
 
+  const rankRangeLabel = currentRank
+    ? currentRank.max === Infinity
+      ? `${currentRank.min}+ elo`
+      : `${currentRank.min}–${currentRank.max} elo`
+    : null;
+
   return (
     <div className="dash-page">
       <button className="dash-back" onClick={onClose}>← back</button>
@@ -52,7 +58,10 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
 
         {placementDone ? (
           <div className="dash-rank-section">
-            <p className="dash-rank-name" style={{ color: currentRank.color }}>{currentRank.name}</p>
+            <p className="dash-rank-name" style={{ color: currentRank.color }}>
+              {currentRank.name}
+              <span className="dash-rank-range"> ({rankRangeLabel})</span>
+            </p>
             <p className="dash-elo-value">{profileElo} <span className="dash-elo-unit">elo</span></p>
             {nextRank && !readOnly && (
               <p className="dash-elo-next">

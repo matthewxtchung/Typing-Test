@@ -38,6 +38,7 @@ function Leaderboard({ onClose, username, onViewUser }) {
             top.push({
               username: profile.username,
               wpm: row.wpm,
+              elo: profile.elo,
               rank: profile.placementDone ? getRank(profile.elo) : null,
               profileData: {
                 id: row.user_id,
@@ -90,7 +91,7 @@ function Leaderboard({ onClose, username, onViewUser }) {
                         border: `1px solid ${entry.rank.color}55`,
                       }}
                     >
-                      {entry.rank.name}
+                      {entry.rank.name} ({entry.elo} elo)
                     </span>
                   )}
                 </span>
