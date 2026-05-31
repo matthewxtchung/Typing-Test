@@ -158,7 +158,6 @@ function App() {
     }
     setInput(value);
 
-    // live stats
     if (startTimeRef.current) {
       const elapsed = (Date.now() - startTimeRef.current) / 1000 / 60;
       const correct = value.split("").filter((c, i) => c === targetText[i]).length;
@@ -282,10 +281,10 @@ function App() {
   });
 
   const anyOverlay = showDashboard || showLeaderboard;
-  const testVisible = pageLoaded && !finished && !anyOverlay;
 
   return (
     <div>
+      {/* Header */}
       <header className={`header fade ${pageLoaded ? "" : "fade-hidden"}`}>
         <div className="header-content">
           <img src={knightLogo} alt="Knight Logo" className="logo" />
@@ -323,27 +322,27 @@ function App() {
         </div>
       </header>
 
-      {/* Fixed-height center column — stats, text, reset never shift */}
+      {/* Stats bar — fixed to viewport, always at same Y, never affected by text */}
+      <div className={`stats-bar fade ${!pageLoaded || anyOverlay || finished ? "fade-hidden" : ""}`}>
+        <div className="stat-item">
+          <span className="stat-value">{started && wpm != null ? wpm : "—"}</span>
+          <span className="stat-label">wpm</span>
+        </div>
+        <div className="stat-divider" />
+        <div className="stat-item">
+          <span className="stat-value">{started && accuracy != null ? accuracy + "%" : "—"}</span>
+          <span className="stat-label">acc</span>
+        </div>
+      </div>
+
+      {/* Center column — fixed from top, text always starts at same Y and grows downward */}
       <div className={`center-column fade ${!pageLoaded || anyOverlay ? "fade-hidden" : ""}`}>
 
-        {/* Ranked timer row — always occupies space, only shows content when active */}
+        {/* Ranked timer */}
         <div className="ranked-timer-row">
           {mode === "ranked" && started && !finished && (
             <p className="ranked-timer">{timeLeft}</p>
           )}
-        </div>
-
-        {/* Stats bar — always occupies space */}
-        <div className={`stats-bar fade ${finished ? "fade-hidden" : ""}`}>
-          <div className="stat-item">
-            <span className="stat-value">{started && wpm != null ? wpm : "—"}</span>
-            <span className="stat-label">wpm</span>
-          </div>
-          <div className="stat-divider" />
-          <div className="stat-item">
-            <span className="stat-value">{started && accuracy != null ? accuracy + "%" : "—"}</span>
-            <span className="stat-label">acc</span>
-          </div>
         </div>
 
         {/* Typing area */}
@@ -368,35 +367,35 @@ function App() {
           />
         </div>
 
-        {/* Reset row — always occupies space, only shows in normal mode before finish */}
+        {/* Reset row */}
         <div className="reset-row">
           {mode === "normal" && !finished && (
             <button className="user-button" onClick={handleNext}>reset</button>
           )}
         </div>
 
-        {/* Result screen — sits in the same column flow, fades in over the same space */}
-        <div className={`result-screen fade ${!finished ? "fade-hidden" : ""}`}>
-          <p className="result-wpm-label">words per minute</p>
-          <p className="result-wpm">{wpm}</p>
-          <p className="result-wpm-unit">wpm</p>
-          <div className="result-stats-row">
-            <div className="result-stat-cell">
-              <span className="result-stat-value">{accuracy != null ? accuracy + "%" : "—"}</span>
-              <span className="result-stat-label">accuracy</span>
-            </div>
-            <div className="result-stat-cell">
-              <span className="result-stat-value">{input.length}</span>
-              <span className="result-stat-label">characters</span>
-            </div>
-            <div className="result-stat-cell">
-              <span className="result-stat-value">{errors != null ? errors : "—"}</span>
-              <span className="result-stat-label">errors</span>
-            </div>
-          </div>
-          <button onClick={handleNext} className="btn-next">next quote →</button>
-        </div>
+      </div>
 
+      {/* Result screen */}
+      <div className={`result-screen fade ${!finished ? "fade-hidden" : ""}`}>
+        <p className="result-wpm-label">words per minute</p>
+        <p className="result-wpm">{wpm}</p>
+        <p className="result-wpm-unit"></p>
+        <div className="result-stats-row">
+          <div className="result-stat-cell">
+            <span className="result-stat-value">{accuracy != null ? accuracy + "%" : "—"}</span>
+            <span className="result-stat-label">accuracy</span>
+          </div>
+          <div className="result-stat-cell">
+            <span className="result-stat-value">{input.length}</span>
+            <span className="result-stat-label">characters</span>
+          </div>
+          <div className="result-stat-cell">
+            <span className="result-stat-value">{errors != null ? errors : "—"}</span>
+            <span className="result-stat-label">errors</span>
+          </div>
+        </div>
+        <button onClick={handleNext} className="user-button">next quote →</button>
       </div>
 
       <div className={`fade ${!showDashboard ? "fade-hidden" : ""}`}>
