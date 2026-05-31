@@ -19,6 +19,7 @@ function App() {
   const [input, setInput] = useState("");
   const [started, setStarted] = useState(false);
   const [wpm, setWpm] = useState(null);
+  const [accuracy, setAccuracy] = useState(null);
   const [finished, setFinished] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [pageLoaded, setPageLoaded] = useState(false);
@@ -28,7 +29,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [username, setUsername] = useState(null);
   const [timeLeft, setTimeLeft] = useState(RANKED_TIME);
-  const [lineStart, setLineStart] = useState(0); // which line index is currently the top visible line
+  const [lineStart, setLineStart] = useState(0);
 
   const inputRef = useRef(null);
   const caretRef = useRef(null);
@@ -63,7 +64,6 @@ function App() {
     if (data) setUsername(data.username);
   };
 
-  // split words into lines of WORDS_PER_LINE
   const words = useMemo(() => targetText.split(" "), [targetText]);
   const lines = useMemo(() => {
     const result = [];
@@ -73,7 +73,6 @@ function App() {
     return result;
   }, [words]);
 
-  // figure out which line the current typed position is on
   const currentWordIndex = useMemo(() => {
     let charIndex = 0;
     for (let i = 0; i < words.length; i++) {
@@ -84,12 +83,8 @@ function App() {
   }, [input, words]);
 
   const currentLine = Math.floor(currentWordIndex / WORDS_PER_LINE);
-
-  // shift window: show lines currentLine-1, currentLine, currentLine+1
-  // but clamp so we always show 3 lines
   const visibleLineStart = Math.max(0, currentLine - 1);
 
-  // caret positioning
   useEffect(() => {
     const measure = () => {
       const currentChar = charsRef.current[input.length];
@@ -120,7 +115,10 @@ function App() {
     }
     const wordsTyped = correctChars / 5;
     const wpmCalc = timeTakenMinutes > 0 ? Math.round(wordsTyped / timeTakenMinutes) : 0;
+    const correct = typedValue.split("").filter((c, i) => c === targetText[i]).length;
+    const accCalc = typedValue.length > 0 ? Math.round((correct / typedValue.length) * 100) : 0;
     setWpm(wpmCalc);
+    setAccuracy(accCalc);
     setFinished(true);
     if (user) {
       supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc }).then(({ error }) => {
@@ -147,7 +145,10 @@ function App() {
     }
     const wordsTyped = correctChars / 5;
     const wpmCalc = timeTakenMinutes > 0 ? Math.round(wordsTyped / timeTakenMinutes) : 0;
+    const correct = currentInput.split("").filter((c, i) => c === targetText[i]).length;
+    const accCalc = currentInput.length > 0 ? Math.round((correct / currentInput.length) * 100) : 0;
     setWpm(wpmCalc);
+    setAccuracy(accCalc);
     setFinished(true);
     if (user) {
       supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc }).then(({ error }) => {
@@ -176,6 +177,15 @@ function App() {
       }
     }
     setInput(value);
+
+    // live stats
+    if (startTimeRef.current) {
+      const elapsed = (Date.now() - startTimeRef.current) / 1000 / 60;
+      const correct = value.split("").filter((c, i) => c === targetText[i]).length;
+      if (elapsed > 0) setWpm(Math.round((correct / 5) / elapsed));
+      if (value.length > 0) setAccuracy(Math.round((correct / value.length) * 100));
+    }
+
     if (mode === "normal" && value.length === targetText.length) {
       finishTest(value);
     }
@@ -187,6 +197,7 @@ function App() {
     startTimeRef.current = null;
     setStarted(false);
     setWpm(null);
+    setAccuracy(null);
     setFinished(false);
     setTimeLeft(RANKED_TIME);
     setLineStart(0);
@@ -229,10 +240,8 @@ function App() {
     await supabase.auth.signOut();
   };
 
-  // render only 3 visible lines
   const visibleLines = lines.slice(visibleLineStart, visibleLineStart + 3);
 
-  // build char index offset for visible lines
   const charOffset = useMemo(() => {
     let offset = 0;
     for (let li = 0; li < visibleLineStart; li++) {
@@ -336,6 +345,20 @@ function App() {
         {mode === "ranked" && started && !finished && (
           <p className="ranked-timer">{timeLeft}</p>
         )}
+
+        {/* Stats bar */}
+        <div className={`stats-bar fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`}>
+          <div className="stat-item">
+            <span className="stat-value">{started && wpm != null ? wpm : "—"}</span>
+            <span className="stat-label">wpm</span>
+          </div>
+          <div className="stat-divider" />
+          <div className="stat-item">
+            <span className="stat-value">{started && accuracy != null ? accuracy + "%" : "—"}</span>
+            <span className="stat-label">acc</span>
+          </div>
+        </div>
+
         <div
           className={`test fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`}
           style={{ position: "relative", transform: "none", top: "auto", left: "auto" }}
