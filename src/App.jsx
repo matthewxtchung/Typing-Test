@@ -241,6 +241,8 @@ function App() {
         elo: newElo,
         test_in_progress: false,
       }).eq("id", user.id);
+
+      await supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc, elo_change: null });
     } else {
       // Ranked game — calc ELO delta
       setIsPlacement(false);
