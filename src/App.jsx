@@ -189,10 +189,22 @@ function App() {
     const errCount = typedValue.length - correct;
     const accCalc = typedValue.length > 0 ? Math.round((correct / typedValue.length) * 100) : 0;
     const elapsed = startTimeRef.current ? (Date.now() - startTimeRef.current) / 1000 / 60 : 0;
-    const wpmCalc = elapsed > 0 ? Math.round((correct / 5) / elapsed) : 0;
+
+    // Only count fully correct words
+    const targetWords = targetStr.split(" ");
+    let charIndex = 0;
+    let correctWords = 0;
+    for (const word of targetWords) {
+      const typedWord = typedValue.slice(charIndex, charIndex + word.length);
+      if (typedWord === word) correctWords++;
+      charIndex += word.length + 1;
+      if (charIndex > typedValue.length) break;
+    }
+
+    const wpmCalc = elapsed > 0 ? Math.round(correctWords / elapsed) : 0;
     return { wpmCalc, accCalc, errCount };
   };
-
+  
   const finishTest = (typedValue) => {
     clearInterval(timerRef.current);
     finishedRef.current = true;
