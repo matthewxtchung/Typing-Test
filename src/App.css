@@ -99,6 +99,10 @@ h1 {
   width: min(1400px, 90vw);
 }
 
+.center-column-ranked {
+  width: min(1700px, 96vw);
+}
+
 .ranked-timer-row {
   height: 36px;
   display: flex;
@@ -118,6 +122,16 @@ h1 {
   font-family: 'Source Code Pro', monospace;
   color: #6c7086;
   flex-shrink: 0;
+}
+
+/* Line shift animation — new content slides up into place */
+@keyframes lineShift {
+  0%   { transform: translateY(1.5em); }
+  100% { transform: translateY(0px); }
+}
+
+.line-shifting {
+  animation: lineShift 0.05s ease-out forwards;
 }
 
 .reset-row {

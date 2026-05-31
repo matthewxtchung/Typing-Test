@@ -31,6 +31,7 @@ function App() {
   const [username, setUsername] = useState(null);
   const [timeLeft, setTimeLeft] = useState(RANKED_TIME);
   const [lineStart, setLineStart] = useState(0);
+  const [isShifting, setIsShifting] = useState(false);
 
   const inputRef = useRef(null);
   const caretRef = useRef(null);
@@ -38,6 +39,7 @@ function App() {
   const timerRef = useRef(null);
   const startTimeRef = useRef(null);
   const testRef = useRef(null);
+  const prevVisibleLineStartRef = useRef(0);
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -85,6 +87,17 @@ function App() {
 
   const currentLine = Math.floor(currentWordIndex / WORDS_PER_LINE);
   const visibleLineStart = Math.max(0, currentLine - 1);
+
+  // Trigger shift animation when visibleLineStart increments
+  useEffect(() => {
+    if (visibleLineStart > prevVisibleLineStartRef.current) {
+      setIsShifting(true);
+      const t = setTimeout(() => setIsShifting(false), 180);
+      prevVisibleLineStartRef.current = visibleLineStart;
+      return () => clearTimeout(t);
+    }
+    prevVisibleLineStartRef.current = visibleLineStart;
+  }, [visibleLineStart]);
 
   useEffect(() => {
     const measure = () => {
@@ -181,6 +194,8 @@ function App() {
     setFinished(false);
     setTimeLeft(RANKED_TIME);
     setLineStart(0);
+    setIsShifting(false);
+    prevVisibleLineStartRef.current = 0;
     charsRef.current = [];
   };
 
@@ -322,7 +337,7 @@ function App() {
         </div>
       </header>
 
-      {/* Stats bar — fixed to viewport, always at same Y, never affected by text */}
+      {/* Stats bar */}
       <div className={`stats-bar fade ${!pageLoaded || anyOverlay || finished ? "fade-hidden" : ""}`}>
         <div className="stat-item">
           <span className="stat-value">{started && wpm != null ? wpm : "—"}</span>
@@ -335,8 +350,8 @@ function App() {
         </div>
       </div>
 
-      {/* Center column — fixed from top, text always starts at same Y and grows downward */}
-      <div className={`center-column fade ${!pageLoaded || anyOverlay ? "fade-hidden" : ""}`}>
+      {/* Center column */}
+      <div className={`center-column fade ${!pageLoaded || anyOverlay ? "fade-hidden" : ""} ${mode === "ranked" ? "center-column-ranked" : ""}`}>
 
         {/* Ranked timer */}
         <div className="ranked-timer-row">
@@ -347,7 +362,7 @@ function App() {
 
         {/* Typing area */}
         <div
-          className={`test fade ${finished ? "fade-hidden" : ""}`}
+          className={`test fade ${finished ? "fade-hidden" : ""} ${isShifting ? "line-shifting" : ""}`}
           ref={testRef}
           onClick={() => inputRef.current?.focus()}
         >
