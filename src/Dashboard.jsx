@@ -5,12 +5,12 @@ import "./Dashboard.css";
 
 const PLACEMENT_COUNT = 5;
 
-function Dashboard({ user, username, onClose, visible, profileElo, placementResults, refreshKey }) {
+function Dashboard({ user, username, onClose, visible, profileElo, placementResults, refreshKey, readOnly }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !user) return;
     setLoading(true);
     const fetchResults = async () => {
       const { data, error } = await supabase
@@ -20,23 +20,15 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Dashboard fetch error:", error);
-        const { data: fallback, error: fallbackError } = await supabase
+        const { data: fallback } = await supabase
           .from("results")
           .select("wpm, created_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
-
-        if (fallbackError) {
-          console.error("Dashboard fallback fetch error:", fallbackError);
-          setResults([]);
-        } else {
-          setResults(fallback || []);
-        }
+        setResults(fallback || []);
       } else {
         setResults(data || []);
       }
-
       setLoading(false);
     };
     fetchResults();
@@ -56,13 +48,13 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
     <div className="dash-page">
       <button className="dash-back" onClick={onClose}>← back</button>
       <div className="dash-content">
-        <p className="dash-email">{username ?? user.email}</p>
+        <p className="dash-email">{username}</p>
 
         {placementDone ? (
           <div className="dash-rank-section">
             <p className="dash-rank-name" style={{ color: currentRank.color }}>{currentRank.name}</p>
             <p className="dash-elo-value">{profileElo} <span className="dash-elo-unit">elo</span></p>
-            {nextRank && (
+            {nextRank && !readOnly && (
               <p className="dash-elo-next">
                 {eloToNext} elo to <span style={{ color: nextRank.color }}>{nextRank.name}</span>
                 <span className="dash-elo-next-wpm"> (~{Math.ceil(eloToWpm(nextRank.min))} wpm)</span>
@@ -90,14 +82,14 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
             <p className="dash-placement-info">
               placement: {placementResults.length}/{PLACEMENT_COUNT}
             </p>
-            <p className="dash-placement-sub">complete all 5 ranked tests to receive your rank</p>
+            {!readOnly && <p className="dash-placement-sub">complete all 5 ranked tests to receive your rank</p>}
           </div>
         )}
 
         {loading ? (
           <p className="dash-empty">loading...</p>
         ) : results.length === 0 ? (
-          <p className="dash-empty">no tests yet. get typing.</p>
+          <p className="dash-empty">no tests yet.</p>
         ) : (
           <div className="dash-stats">
             <div className="dash-stat">
@@ -111,7 +103,6 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

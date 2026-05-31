@@ -9,13 +9,11 @@ import Leaderboard from "./Leaderboard";
 import { supabase } from "./supabaseClient";
 import RankedModal from "./RankedModal";
 
-
 const RANKED_TIME = 15;
 const WORDS_PER_LINE = 10;
 const PLACEMENT_COUNT = 5;
-const ABANDON_PENALTY = -150;
+const ABANDON_PENALTY = -100;
 
-// ELO <-> WPM conversion
 export const wpmToElo = (wpm) => wpm * 10;
 export const eloToWpm = (elo) => elo / 10;
 
@@ -61,9 +59,8 @@ function App() {
   const [lineStart, setLineStart] = useState(0);
   const [isShifting, setIsShifting] = useState(false);
   const [showRankedModal, setShowRankedModal] = useState(false);
+  const [viewingUser, setViewingUser] = useState(null);
 
-
-  // Ranked / ELO state
   const [profileElo, setProfileElo] = useState(0);
   const [placementResults, setPlacementResults] = useState([]);
   const [eloChange, setEloChange] = useState(null);
@@ -77,9 +74,9 @@ function App() {
   const startTimeRef = useRef(null);
   const testRef = useRef(null);
   const prevVisibleLineStartRef = useRef(0);
-  // Track whether ranked test was started for abandon detection
   const rankedStartedRef = useRef(false);
   const inputRef2 = useRef("");
+  const finishedRef = useRef(false);
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -102,11 +99,9 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Abandon penalty on page unload if ranked test in progress
   useEffect(() => {
     const handleUnload = () => {
       if (rankedStartedRef.current && user) {
-        // Use sendBeacon for reliable unload-time request
         const payload = JSON.stringify({
           test_in_progress: false,
           elo: Math.max(0, profileElo + ABANDON_PENALTY),
@@ -131,7 +126,6 @@ function App() {
       setUsername(data.username);
       const placements = data.placement_results ?? [];
       setPlacementResults(placements);
-      // Check for abandoned test from last session
       if (data.test_in_progress) {
         const penalisedElo = Math.max(0, (data.elo ?? 0) + ABANDON_PENALTY);
         setProfileElo(penalisedElo);
@@ -191,12 +185,10 @@ function App() {
 
   const computeStats = (typedValue, targetStr) => {
     if (!typedValue.length) return { wpmCalc: 0, accCalc: 0, errCount: 0 };
-
     const correct = typedValue.split("").filter((c, i) => c === targetStr[i]).length;
     const errCount = typedValue.length - correct;
     const accCalc = Math.round((correct / typedValue.length) * 100);
     const elapsed = startTimeRef.current ? (Date.now() - startTimeRef.current) / 1000 / 60 : 0;
-
     const wpmCalc = elapsed > 0 ? Math.round((correct / 5) / elapsed) : 0;
     const finalWpm = accCalc < 5 ? 0 : wpmCalc;
     return { wpmCalc: finalWpm, accCalc, errCount };
@@ -235,17 +227,15 @@ function App() {
     let change = null;
 
     if (newPlacements.length < PLACEMENT_COUNT) {
-      // Still in placement
       newPlacements.push(wpmCalc);
       setPlacementResults(newPlacements);
       setIsPlacement(true);
 
       if (newPlacements.length === PLACEMENT_COUNT) {
-        // Final placement test — compute starting ELO
         const avgWpm = Math.round(newPlacements.reduce((a, b) => a + b, 0) / PLACEMENT_COUNT);
         newElo = wpmToElo(avgWpm);
         setProfileElo(newElo);
-        change = null; // No change shown on final placement, just reveal ELO
+        change = null;
       }
 
       await supabase.from("profiles").update({
@@ -254,10 +244,10 @@ function App() {
         test_in_progress: false,
       }).eq("id", user.id);
 
-      await supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc, elo_change: null });
+      const { error: e1 } = await supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc, elo_change: null });
+      if (e1) console.error("placement insert error:", e1);
       setDashRefreshKey((k) => k + 1);
     } else {
-      // Ranked game — calc ELO delta
       setIsPlacement(false);
       change = calcEloChange(profileElo, wpmCalc);
       newElo = Math.max(0, profileElo + change);
@@ -269,12 +259,11 @@ function App() {
         test_in_progress: false,
       }).eq("id", user.id);
 
-      await supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc, elo_change: change });
+      const { error: e2 } = await supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc, elo_change: change });
+      if (e2) console.error("ranked insert error:", e2);
       setDashRefreshKey((k) => k + 1);
     }
   };
-
-  const finishedRef = useRef(false);
 
   const handleChange = (e) => {
     if (finishedRef.current) return;
@@ -284,7 +273,6 @@ function App() {
       startTimeRef.current = Date.now();
       if (mode === "ranked") {
         rankedStartedRef.current = true;
-        // Mark test in progress in Supabase
         if (user) {
           supabase.from("profiles").update({ test_in_progress: true }).eq("id", user.id);
         }
@@ -316,9 +304,16 @@ function App() {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (mode === "ranked" && (e.key === "Tab" || e.key === "Enter")) {
+      e.preventDefault();
+    }
+  };
+
   const applyAbandonPenalty = async () => {
     if (!user || !rankedStartedRef.current) return;
     rankedStartedRef.current = false;
+    clearInterval(timerRef.current);
     const penalisedElo = Math.max(0, profileElo + ABANDON_PENALTY);
     setProfileElo(penalisedElo);
     await supabase.from("profiles").update({
@@ -331,6 +326,7 @@ function App() {
     clearInterval(timerRef.current);
     finishedRef.current = false;
     setInput("");
+    inputRef2.current = "";
     startTimeRef.current = null;
     setStarted(false);
     setWpm(null);
@@ -362,7 +358,6 @@ function App() {
       setShowAuth(true);
       return;
     }
-    // Apply abandon penalty if switching away from a started ranked test
     if (mode === "ranked" && rankedStartedRef.current) {
       await applyAbandonPenalty();
     }
@@ -379,14 +374,40 @@ function App() {
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
+  const handleOpenDashboard = async () => {
+    if (mode === "ranked" && rankedStartedRef.current) {
+      await applyAbandonPenalty();
+      resetState();
+      setTargetText(generateWords(120));
+    }
+    setViewingUser(null);
+    setShowDashboard(true);
+  };
+
+  const handleOpenLeaderboard = async () => {
+    if (mode === "ranked" && rankedStartedRef.current) {
+      await applyAbandonPenalty();
+      resetState();
+      setTargetText(generateWords(120));
+    }
+    setShowLeaderboard(true);
+  };
+
   const handleCloseDashboard = () => {
     setShowDashboard(false);
+    setViewingUser(null);
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   const handleCloseLeaderboard = () => {
     setShowLeaderboard(false);
     setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const handleViewUser = (profileData) => {
+    setViewingUser(profileData);
+    setShowLeaderboard(false);
+    setShowDashboard(true);
   };
 
   const handleSignOut = async () => {
@@ -460,7 +481,6 @@ function App() {
 
   return (
     <div>
-      {/* Header */}
       <header className={`header fade ${pageLoaded ? "" : "fade-hidden"}`}>
         <div className="header-content">
           <img src={knightLogo} alt="Knight Logo" className="logo" />
@@ -472,25 +492,25 @@ function App() {
             >
               normal
             </button>
-              <span className="mode-divider">|</span>
-              <button
-                className={`mode-button ${mode === "ranked" ? "mode-button-active" : ""}`}
-                onClick={() => handleModeSwitch("ranked")}
-              >
-                ranked
+            <span className="mode-divider">|</span>
+            <button
+              className={`mode-button ${mode === "ranked" ? "mode-button-active" : ""}`}
+              onClick={() => handleModeSwitch("ranked")}
+            >
+              ranked
+            </button>
+            {mode === "ranked" && (
+              <button className="mode-button" onClick={() => setShowRankedModal(true)}>
+                ?
               </button>
-              {mode === "ranked" && (
-                <button className="mode-button" onClick={() => setShowRankedModal(true)}>
-                  ?
-                </button>
-              )}
+            )}
           </div>
           <div className="header-right">
             <div className="user-info">
-              <button className="user-button" onClick={() => setShowLeaderboard(true)}>leaderboard</button>
+              <button className="user-button" onClick={handleOpenLeaderboard}>leaderboard</button>
               {user ? (
                 <>
-                  <button className="user-button" onClick={() => setShowDashboard(true)}>
+                  <button className="user-button" onClick={handleOpenDashboard}>
                     {username ?? user.email}
                   </button>
                   <button className="user-button" onClick={handleSignOut}>logout</button>
@@ -503,7 +523,6 @@ function App() {
         </div>
       </header>
 
-      {/* Stats bar */}
       <div className={`stats-bar fade ${!pageLoaded || anyOverlay || finished ? "fade-hidden" : ""}`}>
         <div className="stat-item">
           <span className="stat-value">{started && wpm != null ? wpm : "—"}</span>
@@ -514,7 +533,6 @@ function App() {
           <span className="stat-value">{started && accuracy != null ? accuracy + "%" : "—"}</span>
           <span className="stat-label">acc</span>
         </div>
-        {/* Ranked: show ELO or placement progress */}
         {mode === "ranked" && user && !started && (
           <>
             <div className="stat-divider" />
@@ -535,17 +553,15 @@ function App() {
         )}
       </div>
 
-      {/* Center column */}
       <div className={`center-column fade ${!pageLoaded || anyOverlay ? "fade-hidden" : ""} ${mode === "ranked" ? "center-column-ranked" : ""}`}>
-
-        {/* Ranked timer */}
         <div className="ranked-timer-row">
           {mode === "ranked" && started && !finished && (
-            <p className="ranked-timer">{timeLeft}</p>
+            <p className={`ranked-timer ${timeLeft <= 3 ? "danger" : timeLeft <= 6 ? "warning" : ""}`}>
+              {timeLeft}
+            </p>
           )}
         </div>
 
-        {/* Typing area */}
         <div
           className={`test fade ${finished ? "fade-hidden" : ""} ${isShifting ? "line-shifting" : ""}`}
           ref={testRef}
@@ -558,6 +574,7 @@ function App() {
             type="text"
             value={input}
             onChange={handleChange}
+            onKeyDown={handleKeyDown}
             className="typing-input"
             autoFocus
             onPaste={(e) => e.preventDefault()}
@@ -567,18 +584,14 @@ function App() {
           />
         </div>
 
-        {/* Reset row — normal mode only */}
         <div className="reset-row">
           {mode === "normal" && !finished && (
             <button className="user-button" onClick={handleNext}>reset</button>
           )}
         </div>
-
       </div>
 
-      {/* Result screen */}
       <div className={`result-screen fade ${!finished ? "fade-hidden" : ""}`}>
-        {/* Ranked result extras */}
         {mode === "ranked" && user && (
           <div className="result-ranked-header">
             {!placementDone || isPlacement ? (
@@ -627,21 +640,26 @@ function App() {
       </div>
 
       <div className={`fade ${!showDashboard ? "fade-hidden" : ""}`}>
-        {user && (
+        {showDashboard && (
           <Dashboard
-            user={user}
-            username={username}
+            user={viewingUser ?? user}
+            username={viewingUser ? viewingUser.username : username}
             onClose={handleCloseDashboard}
             visible={showDashboard}
-            profileElo={profileElo}
-            placementResults={placementResults}
+            profileElo={viewingUser ? viewingUser.elo : profileElo}
+            placementResults={viewingUser ? (viewingUser.placement_results ?? []) : placementResults}
             refreshKey={dashRefreshKey}
+            readOnly={!!viewingUser}
           />
         )}
       </div>
 
       <div className={`fade ${!showLeaderboard ? "fade-hidden" : ""}`}>
-        <Leaderboard onClose={handleCloseLeaderboard} username={username} />
+        <Leaderboard
+          onClose={handleCloseLeaderboard}
+          username={username}
+          onViewUser={handleViewUser}
+        />
       </div>
 
       {showAuth && (

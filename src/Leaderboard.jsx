@@ -5,7 +5,7 @@ import "./Dashboard.css";
 
 const PLACEMENT_COUNT = 5;
 
-function Leaderboard({ onClose, username }) {
+function Leaderboard({ onClose, username, onViewUser }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,6 +25,7 @@ function Leaderboard({ onClose, username }) {
           profiles.map((p) => [p.id, {
             username: p.username,
             elo: p.elo ?? 0,
+            placement_results: p.placement_results ?? [],
             placementDone: (p.placement_results ?? []).length >= PLACEMENT_COUNT,
           }])
         );
@@ -33,11 +34,17 @@ function Leaderboard({ onClose, username }) {
         for (const row of results) {
           if (!seen.has(row.user_id)) {
             seen.add(row.user_id);
-            const profile = profileMap[row.user_id] ?? { username: "unknown", elo: 0, placementDone: false };
+            const profile = profileMap[row.user_id] ?? { username: "unknown", elo: 0, placement_results: [], placementDone: false };
             top.push({
               username: profile.username,
               wpm: row.wpm,
               rank: profile.placementDone ? getRank(profile.elo) : null,
+              profileData: {
+                id: row.user_id,
+                username: profile.username,
+                elo: profile.elo,
+                placement_results: profile.placement_results,
+              },
             });
           }
           if (top.length >= 50) break;
@@ -68,7 +75,12 @@ function Leaderboard({ onClose, username }) {
               >
                 <span className="dash-lb-rank">#{i + 1}</span>
                 <span className="dash-lb-name">
-                  {entry.username}
+                  <button
+                    className="dash-lb-username-btn"
+                    onClick={() => onViewUser(entry.profileData)}
+                  >
+                    {entry.username}
+                  </button>
                   {entry.rank && (
                     <span
                       className="dash-lb-rank-badge"
