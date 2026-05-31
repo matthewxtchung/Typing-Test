@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
+import { getRank } from "./App";
 import "./Dashboard.css";
+
+const PLACEMENT_COUNT = 5;
 
 function Leaderboard({ onClose, username }) {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -15,18 +18,26 @@ function Leaderboard({ onClose, username }) {
 
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, username");
+        .select("id, username, elo, placement_results");
 
       if (results && profiles) {
-        const profileMap = Object.fromEntries(profiles.map((p) => [p.id, p.username]));
+        const profileMap = Object.fromEntries(
+          profiles.map((p) => [p.id, {
+            username: p.username,
+            elo: p.elo ?? 0,
+            placementDone: (p.placement_results ?? []).length >= PLACEMENT_COUNT,
+          }])
+        );
         const seen = new Set();
         const top = [];
         for (const row of results) {
           if (!seen.has(row.user_id)) {
             seen.add(row.user_id);
+            const profile = profileMap[row.user_id] ?? { username: "unknown", elo: 0, placementDone: false };
             top.push({
-              username: profileMap[row.user_id] ?? "unknown",
+              username: profile.username,
               wpm: row.wpm,
+              rank: profile.placementDone ? getRank(profile.elo) : null,
             });
           }
           if (top.length >= 50) break;
@@ -55,7 +66,21 @@ function Leaderboard({ onClose, username }) {
                 className={`dash-lb-row ${entry.username === username ? "dash-lb-you" : ""}`}
               >
                 <span className="dash-lb-rank">#{i + 1}</span>
-                <span className="dash-lb-name">{entry.username}</span>
+                <span className="dash-lb-name">
+                  {entry.username}
+                  {entry.rank && (
+                    <span
+                      className="dash-lb-rank-badge"
+                      style={{
+                        background: entry.rank.color + "22",
+                        color: entry.rank.color,
+                        border: `1px solid ${entry.rank.color}55`,
+                      }}
+                    >
+                      {entry.rank.name}
+                    </span>
+                  )}
+                </span>
                 <span className="dash-lb-wpm">{entry.wpm} wpm</span>
               </div>
             ))}
