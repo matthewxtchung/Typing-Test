@@ -20,6 +20,7 @@ function App() {
   const [started, setStarted] = useState(false);
   const [wpm, setWpm] = useState(null);
   const [accuracy, setAccuracy] = useState(null);
+  const [errors, setErrors] = useState(null);
   const [finished, setFinished] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [pageLoaded, setPageLoaded] = useState(false);
@@ -98,27 +99,21 @@ function App() {
     return () => cancelAnimationFrame(frame);
   }, [input, targetText, mounted, visibleLineStart]);
 
+  const computeStats = (typedValue, targetStr) => {
+    const correct = typedValue.split("").filter((c, i) => c === targetStr[i]).length;
+    const errCount = typedValue.length - correct;
+    const accCalc = typedValue.length > 0 ? Math.round((correct / typedValue.length) * 100) : 0;
+    const elapsed = startTimeRef.current ? (Date.now() - startTimeRef.current) / 1000 / 60 : 0;
+    const wpmCalc = elapsed > 0 ? Math.round((correct / 5) / elapsed) : 0;
+    return { wpmCalc, accCalc, errCount };
+  };
+
   const finishTest = (typedValue) => {
     clearInterval(timerRef.current);
-    const endTime = Date.now();
-    const startTime = startTimeRef.current;
-    if (!startTime) return;
-    const timeTakenMinutes = (endTime - startTime) / 1000 / 60;
-    const targetWords = targetText.split(" ");
-    const typedWords = typedValue.split(" ");
-    let correctChars = 0;
-    for (let i = 0; i < targetWords.length; i++) {
-      if (typedWords[i] === targetWords[i]) {
-        correctChars += targetWords[i].length;
-        if (i < targetWords.length - 1) correctChars += 1;
-      }
-    }
-    const wordsTyped = correctChars / 5;
-    const wpmCalc = timeTakenMinutes > 0 ? Math.round(wordsTyped / timeTakenMinutes) : 0;
-    const correct = typedValue.split("").filter((c, i) => c === targetText[i]).length;
-    const accCalc = typedValue.length > 0 ? Math.round((correct / typedValue.length) * 100) : 0;
+    const { wpmCalc, accCalc, errCount } = computeStats(typedValue, targetText);
     setWpm(wpmCalc);
     setAccuracy(accCalc);
+    setErrors(errCount);
     setFinished(true);
     if (user) {
       supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc }).then(({ error }) => {
@@ -129,26 +124,11 @@ function App() {
 
   const finishRanked = () => {
     clearInterval(timerRef.current);
-    const endTime = Date.now();
-    const startTime = startTimeRef.current;
-    if (!startTime) return;
-    const timeTakenMinutes = (endTime - startTime) / 1000 / 60;
     const currentInput = inputRef.current?.value ?? "";
-    const targetWords = targetText.split(" ");
-    const typedWords = currentInput.split(" ");
-    let correctChars = 0;
-    for (let i = 0; i < typedWords.length; i++) {
-      if (typedWords[i] === targetWords[i]) {
-        correctChars += targetWords[i].length;
-        if (i < typedWords.length - 1) correctChars += 1;
-      }
-    }
-    const wordsTyped = correctChars / 5;
-    const wpmCalc = timeTakenMinutes > 0 ? Math.round(wordsTyped / timeTakenMinutes) : 0;
-    const correct = currentInput.split("").filter((c, i) => c === targetText[i]).length;
-    const accCalc = currentInput.length > 0 ? Math.round((correct / currentInput.length) * 100) : 0;
+    const { wpmCalc, accCalc, errCount } = computeStats(currentInput, targetText);
     setWpm(wpmCalc);
     setAccuracy(accCalc);
+    setErrors(errCount);
     setFinished(true);
     if (user) {
       supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc }).then(({ error }) => {
@@ -198,13 +178,14 @@ function App() {
     setStarted(false);
     setWpm(null);
     setAccuracy(null);
+    setErrors(null);
     setFinished(false);
     setTimeLeft(RANKED_TIME);
     setLineStart(0);
     charsRef.current = [];
   };
 
-  const handleReset = () => {
+  const handleNext = () => {
     resetState();
     if (mode === "normal") {
       setTargetText(quotesData[Math.floor(Math.random() * quotesData.length)].text);
@@ -301,6 +282,7 @@ function App() {
   });
 
   const anyOverlay = showDashboard || showLeaderboard;
+  const testVisible = pageLoaded && !finished && !anyOverlay;
 
   return (
     <div>
@@ -341,13 +323,18 @@ function App() {
         </div>
       </header>
 
-      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: "2rem" }}>
-        {mode === "ranked" && started && !finished && (
-          <p className="ranked-timer">{timeLeft}</p>
-        )}
+      {/* Fixed-height center column — stats, text, reset never shift */}
+      <div className={`center-column fade ${!pageLoaded || anyOverlay ? "fade-hidden" : ""}`}>
 
-        {/* Stats bar */}
-        <div className={`stats-bar fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`}>
+        {/* Ranked timer row — always occupies space, only shows content when active */}
+        <div className="ranked-timer-row">
+          {mode === "ranked" && started && !finished && (
+            <p className="ranked-timer">{timeLeft}</p>
+          )}
+        </div>
+
+        {/* Stats bar — always occupies space */}
+        <div className={`stats-bar fade ${finished ? "fade-hidden" : ""}`}>
           <div className="stat-item">
             <span className="stat-value">{started && wpm != null ? wpm : "—"}</span>
             <span className="stat-label">wpm</span>
@@ -359,9 +346,9 @@ function App() {
           </div>
         </div>
 
+        {/* Typing area */}
         <div
-          className={`test fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`}
-          style={{ position: "relative", transform: "none", top: "auto", left: "auto" }}
+          className={`test fade ${finished ? "fade-hidden" : ""}`}
           ref={testRef}
           onClick={() => inputRef.current?.focus()}
         >
@@ -380,18 +367,36 @@ function App() {
             }}
           />
         </div>
-        {mode === "normal" && (
-          <div className={`fade ${!pageLoaded || finished || anyOverlay ? "fade-hidden" : ""}`}>
-            <button className="user-button" onClick={handleReset}>reset</button>
-          </div>
-        )}
-      </div>
 
-      <div className={`result-screen fade ${!finished || anyOverlay ? "fade-hidden" : ""}`}>
-        <h1>Test Complete!</h1>
-        <p className="result-label">wpm</p>
-        <p className="result-value">{wpm}</p>
-        <button onClick={handleReset} className="user-button">reset</button>
+        {/* Reset row — always occupies space, only shows in normal mode before finish */}
+        <div className="reset-row">
+          {mode === "normal" && !finished && (
+            <button className="user-button" onClick={handleNext}>reset</button>
+          )}
+        </div>
+
+        {/* Result screen — sits in the same column flow, fades in over the same space */}
+        <div className={`result-screen fade ${!finished ? "fade-hidden" : ""}`}>
+          <p className="result-wpm-label">words per minute</p>
+          <p className="result-wpm">{wpm}</p>
+          <p className="result-wpm-unit">wpm</p>
+          <div className="result-stats-row">
+            <div className="result-stat-cell">
+              <span className="result-stat-value">{accuracy != null ? accuracy + "%" : "—"}</span>
+              <span className="result-stat-label">accuracy</span>
+            </div>
+            <div className="result-stat-cell">
+              <span className="result-stat-value">{input.length}</span>
+              <span className="result-stat-label">characters</span>
+            </div>
+            <div className="result-stat-cell">
+              <span className="result-stat-value">{errors != null ? errors : "—"}</span>
+              <span className="result-stat-label">errors</span>
+            </div>
+          </div>
+          <button onClick={handleNext} className="btn-next">next quote →</button>
+        </div>
+
       </div>
 
       <div className={`fade ${!showDashboard ? "fade-hidden" : ""}`}>
