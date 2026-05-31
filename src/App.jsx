@@ -7,6 +7,8 @@ import AuthModal from "./AuthModal";
 import Dashboard from "./Dashboard";
 import Leaderboard from "./Leaderboard";
 import { supabase } from "./supabaseClient";
+import RankedModal from "./RankedModal";
+
 
 const RANKED_TIME = 15;
 const WORDS_PER_LINE = 10;
@@ -58,6 +60,8 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(RANKED_TIME);
   const [lineStart, setLineStart] = useState(0);
   const [isShifting, setIsShifting] = useState(false);
+  const [showRankedModal, setShowRankedModal] = useState(false);
+
 
   // Ranked / ELO state
   const [profileElo, setProfileElo] = useState(0);
@@ -360,6 +364,9 @@ function App() {
     }
     resetState();
     setMode(newMode);
+    if (newMode === "ranked" && !localStorage.getItem("ranked_seen")) {
+      setShowRankedModal(true);
+    }
     if (newMode === "normal") {
       setTargetText(quotesData[Math.floor(Math.random() * quotesData.length)].text);
     } else {
@@ -461,13 +468,18 @@ function App() {
             >
               normal
             </button>
-            <span className="mode-divider">|</span>
-            <button
-              className={`mode-button ${mode === "ranked" ? "mode-button-active" : ""}`}
-              onClick={() => handleModeSwitch("ranked")}
-            >
-              ranked
-            </button>
+              <span className="mode-divider">|</span>
+              <button
+                className={`mode-button ${mode === "ranked" ? "mode-button-active" : ""}`}
+                onClick={() => handleModeSwitch("ranked")}
+              >
+                ranked
+              </button>
+              {mode === "ranked" && (
+                <button className="mode-button" onClick={() => setShowRankedModal(true)}>
+                  ?
+                </button>
+              )}
           </div>
           <div className="header-right">
             <div className="user-info">
@@ -633,6 +645,13 @@ function App() {
           onClose={() => { setShowAuth(false); setTimeout(() => inputRef.current?.focus(), 0); }}
           onAuth={(u) => { setUser(u); fetchProfile(u.id); }}
         />
+      )}
+      {showRankedModal && (
+        <RankedModal onClose={() => {
+          localStorage.setItem("ranked_seen", "1");
+          setShowRankedModal(false);
+          setTimeout(() => inputRef.current?.focus(), 0);
+        }} />
       )}
     </div>
   );

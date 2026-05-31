@@ -1,0 +1,57 @@
+import { RANKS, eloToWpm } from "./App";
+import "./RankedModal.css";
+
+function RankedModal({ onClose }) {
+  return (
+    <div className="rmodal-overlay">
+      <div className="rmodal">
+        <p className="rmodal-title">welcome to ranked</p>
+
+        <div className="rmodal-rules">
+          <div className="rmodal-rule">
+            <span className="rmodal-num">1</span>
+            <span>you have <span className="rmodal-highlight">15 seconds</span> — type as fast and accurately as you can</span>
+          </div>
+          <div className="rmodal-rule">
+            <span className="rmodal-num">2</span>
+            <span>text is <span className="rmodal-highlight">random words</span>, not quotes</span>
+          </div>
+          <div className="rmodal-rule">
+            <span className="rmodal-num">3</span>
+            <span>there is <span className="rmodal-highlight">no reset</span> once you start typing</span>
+          </div>
+          <div className="rmodal-rule">
+            <span className="rmodal-num">4</span>
+            <span>complete <span className="rmodal-highlight">5 placement tests</span> to receive your starting rank</span>
+          </div>
+        </div>
+
+        <div className="rmodal-divider" />
+
+        <p className="rmodal-legend-title">rank legend</p>
+        <div className="rmodal-legend">
+          {RANKS.map((r) => (
+            <div key={r.name} className="rmodal-legend-row">
+              <div className="rmodal-legend-pip" style={{ background: r.color }} />
+              <span className="rmodal-legend-name" style={{ color: r.color }}>{r.name}</span>
+              <span className="rmodal-legend-range">
+                {r.max === Infinity
+                  ? `${eloToWpm(r.min)}+ wpm`
+                  : `${eloToWpm(r.min)}–${eloToWpm(r.max)} wpm`}
+              </span>
+              <span className="rmodal-legend-elo">
+                {r.max === Infinity
+                  ? `${r.min}+ elo`
+                  : `${r.min}–${r.max} elo`}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <button className="rmodal-btn" onClick={onClose}>ok →</button>
+      </div>
+    </div>
+  );
+}
+
+export default RankedModal;
