@@ -243,8 +243,16 @@ function App() {
 
     if (!user) return;
 
-    const newPlacements = [...placementResultsRef.current];
-    let newElo = profileEloRef.current;
+    // Always read fresh from DB — never trust local state/refs which may be
+    // stale if the user started typing before fetchProfile finished loading.
+    const { data: freshProfile } = await supabase
+      .from("profiles")
+      .select("placement_results, elo")
+      .eq("id", user.id)
+      .single();
+
+    const newPlacements = [...(freshProfile?.placement_results ?? [])];
+    let newElo = freshProfile?.elo ?? profileEloRef.current;
     let change = null;
 
     if (newPlacements.length < PLACEMENT_COUNT) {
