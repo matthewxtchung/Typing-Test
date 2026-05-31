@@ -120,14 +120,19 @@ function App() {
     if (data) {
       setUsername(data.username);
       const placements = data.placement_results ?? [];
+
+      // Always restore placement_results regardless of penalty branch
       setPlacementResults(placements);
 
       let currentElo = data.elo ?? 0;
 
-      // Apply penalty if they refreshed mid-test (localStorage flag) or
-      // test_in_progress was left true (e.g. browser crashed)
+      // Guard against race condition: if rankedStartedRef is still true, the test
+      // just legitimately finished and finishRanked() is still awaiting its DB
+      // update — don't treat that in-flight test_in_progress as an abandon.
       const abandoned = localStorage.getItem("ranked_abandoned");
-      if (abandoned || data.test_in_progress) {
+      const legitimatelyInProgress = rankedStartedRef.current;
+
+      if ((abandoned || data.test_in_progress) && !legitimatelyInProgress) {
         localStorage.removeItem("ranked_abandoned");
         const penalisedElo = Math.max(0, currentElo + ABANDON_PENALTY);
         setProfileElo(penalisedElo);
@@ -211,7 +216,7 @@ function App() {
     }
   };
 
-const finishRanked = async () => {
+  const finishRanked = async () => {
     clearInterval(timerRef.current);
     finishedRef.current = true;
     rankedStartedRef.current = false;
