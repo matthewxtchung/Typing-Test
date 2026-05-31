@@ -20,6 +20,19 @@ function AuthModal({ onClose, onAuth }) {
       if (error) setError(error.message);
       else { onAuth(data.user); onClose(); }
     } else {
+      // Check username availability BEFORE creating the auth account
+      const { data: existing } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username)
+        .maybeSingle();
+
+      if (existing) {
+        setError("That username is already taken.");
+        setLoading(false);
+        return;
+      }
+
       const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
       if (signUpError) {
         setError(signUpError.message);
