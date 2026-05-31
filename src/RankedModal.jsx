@@ -26,7 +26,7 @@ function RankedModal({ onClose }) {
           </div>
           <div className="rmodal-rule">
             <span className="rmodal-num">5</span>
-            <span>abandoning a test (including refreshing) costs <span className="rmodal-highlight">100 elo</span></span>
+            <span>abandoning a test (including refreshing) costs <span className="rmodal-highlight">50 elo</span></span>
           </div>
         </div>
 

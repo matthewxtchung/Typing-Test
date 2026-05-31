@@ -12,7 +12,7 @@ import RankedModal from "./RankedModal";
 const RANKED_TIME = 15;
 const WORDS_PER_LINE = 10;
 const PLACEMENT_COUNT = 5;
-const ABANDON_PENALTY = -100;
+const ABANDON_PENALTY = -50;
 
 export const wpmToElo = (wpm) => wpm * 10;
 export const eloToWpm = (elo) => elo / 10;
