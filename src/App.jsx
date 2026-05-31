@@ -358,6 +358,10 @@ function App() {
 
   const handleModeSwitch = async (newMode) => {
     if (newMode === mode) return;
+    if (newMode === "ranked" && !user) {
+      setShowAuth(true);
+      return;
+    }
     // Apply abandon penalty if switching away from a started ranked test
     if (mode === "ranked" && rankedStartedRef.current) {
       await applyAbandonPenalty();
