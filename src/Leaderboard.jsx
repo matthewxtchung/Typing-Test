@@ -54,6 +54,7 @@ function Leaderboard({ onClose, username }) {
       <button className="dash-back" onClick={onClose}>← back</button>
       <div className="dash-content">
         <p className="dash-email">leaderboard</p>
+        <p className="dash-lb-notice">results may take a moment to update — refresh if needed</p>
         {loading ? (
           <p className="dash-empty">loading...</p>
         ) : leaderboard.length === 0 ? (

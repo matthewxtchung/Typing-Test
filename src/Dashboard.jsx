@@ -13,7 +13,6 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
     if (!visible) return;
     setLoading(true);
     const fetchResults = async () => {
-      // Select only wpm and created_at — avoids any RLS/column issues with elo_change
       const { data, error } = await supabase
         .from("results")
         .select("wpm, created_at, elo_change")
@@ -22,7 +21,6 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
 
       if (error) {
         console.error("Dashboard fetch error:", error);
-        // Fallback: try without elo_change in case column doesn't exist or is restricted
         const { data: fallback, error: fallbackError } = await supabase
           .from("results")
           .select("wpm, created_at")
@@ -60,7 +58,6 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
       <div className="dash-content">
         <p className="dash-email">{username ?? user.email}</p>
 
-        {/* ELO / Rank section */}
         {placementDone ? (
           <div className="dash-rank-section">
             <p className="dash-rank-name" style={{ color: currentRank.color }}>{currentRank.name}</p>
@@ -71,16 +68,18 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
                 <span className="dash-elo-next-wpm"> (~{Math.ceil(eloToWpm(nextRank.min))} wpm)</span>
               </p>
             )}
-            {/* Rank progress bar */}
             <div className="dash-rank-bar-wrap">
               {RANKS.map((r) => {
-                const active = profileElo >= r.min;
+                const isCurrent = currentRank && r.name === currentRank.name;
                 return (
                   <div
                     key={r.name}
-                    className="dash-rank-pip"
+                    className={`dash-rank-pip ${isCurrent ? "dash-rank-pip-current" : ""}`}
                     title={r.name}
-                    style={{ background: active ? r.color : "#313244" }}
+                    style={{
+                      background: r.color,
+                      opacity: profileElo >= r.min ? 1 : 0.35,
+                    }}
                   />
                 );
               })}
@@ -91,7 +90,7 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
             <p className="dash-placement-info">
               placement: {placementResults.length}/{PLACEMENT_COUNT}
             </p>
-            <p className="dash-placement-sub">complete all 10 ranked tests to receive your rank</p>
+            <p className="dash-placement-sub">complete all 5 ranked tests to receive your rank</p>
           </div>
         )}
 

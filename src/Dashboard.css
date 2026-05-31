@@ -218,3 +218,18 @@
   letter-spacing: 0.03em;
   vertical-align: middle;
 }
+
+.dash-rank-pip-current {
+  height: 6px;
+  border-radius: 3px;
+  outline: 2px solid #cdd6f4;
+  outline-offset: 2px;
+}
+
+.dash-lb-notice {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 11px;
+  color: #45475a;
+  letter-spacing: 0.5px;
+  margin-top: -32px;
+}
