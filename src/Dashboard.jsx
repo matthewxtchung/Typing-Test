@@ -13,12 +13,32 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
     if (!visible) return;
     setLoading(true);
     const fetchResults = async () => {
-      const { data } = await supabase
+      // Select only wpm and created_at — avoids any RLS/column issues with elo_change
+      const { data, error } = await supabase
         .from("results")
         .select("wpm, created_at, elo_change")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-      setResults(data || []);
+
+      if (error) {
+        console.error("Dashboard fetch error:", error);
+        // Fallback: try without elo_change in case column doesn't exist or is restricted
+        const { data: fallback, error: fallbackError } = await supabase
+          .from("results")
+          .select("wpm, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (fallbackError) {
+          console.error("Dashboard fallback fetch error:", fallbackError);
+          setResults([]);
+        } else {
+          setResults(fallback || []);
+        }
+      } else {
+        setResults(data || []);
+      }
+
       setLoading(false);
     };
     fetchResults();

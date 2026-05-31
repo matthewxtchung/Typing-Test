@@ -25,7 +25,7 @@ export const words = [
   "cut", "young", "talk", "soon", "list", "song", "being", "leave",
   "family", "body", "music", "color", "stand", "sun", "questions", "fish",
   "area", "mark", "dog", "horse", "birds", "problem", "complete", "room",
-  "knew", "since", "ever", "piece", "told", "usually", "didn", "friends",
+  "knew", "since", "ever", "piece", "told", "usually", "friends",
   "easy", "heard", "order", "red", "door", "sure", "become", "top",
   "ship", "across", "today", "during", "short", "better", "best", "however",
   "low", "hours", "black", "products", "happened", "whole", "measure",
