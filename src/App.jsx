@@ -32,8 +32,8 @@ export const getRank = (elo) => RANKS.find((r) => elo >= r.min && elo < r.max) ?
 
 export const calcEloChange = (currentElo, actualWpm) => {
   const expectedWpm = eloToWpm(currentElo);
-  const ratio = (actualWpm - expectedWpm) / expectedWpm;
-  const change = Math.round(ratio * currentElo * 0.5);
+  const delta = actualWpm - expectedWpm;
+  const change = Math.round(delta * 5);
   return Math.max(-150, Math.min(150, change));
 };
 
@@ -211,13 +211,20 @@ function App() {
     }
   };
 
-  const finishRanked = async () => {
+const finishRanked = async () => {
     clearInterval(timerRef.current);
     finishedRef.current = true;
     rankedStartedRef.current = false;
     localStorage.removeItem("ranked_abandoned");
     const currentInput = inputRef2.current;
-    const { wpmCalc, accCalc, errCount } = computeStats(currentInput, targetText);
+
+    const elapsed = startTimeRef.current ? (Date.now() - startTimeRef.current) / 1000 / 60 : 0;
+    const correct = currentInput.split("").filter((c, i) => c === targetText[i]).length;
+    const rawWpm = elapsed > 0 ? (correct / 5) / elapsed : 0;
+    const wpmCalc = Math.round(rawWpm);
+    const accCalc = currentInput.length > 0 ? Math.round((correct / currentInput.length) * 100) : 0;
+    const errCount = currentInput.length - correct;
+
     setWpm(wpmCalc);
     setAccuracy(accCalc);
     setErrors(errCount);
@@ -230,12 +237,12 @@ function App() {
     let change = null;
 
     if (newPlacements.length < PLACEMENT_COUNT) {
-      newPlacements.push(wpmCalc);
+      newPlacements.push(rawWpm);
       setPlacementResults(newPlacements);
       setIsPlacement(true);
 
       if (newPlacements.length === PLACEMENT_COUNT) {
-        const avgWpm = Math.round(newPlacements.reduce((a, b) => a + b, 0) / PLACEMENT_COUNT);
+        const avgWpm = newPlacements.reduce((a, b) => a + b, 0) / PLACEMENT_COUNT;
         newElo = wpmToElo(avgWpm);
         setProfileElo(newElo);
         change = null;
@@ -252,7 +259,7 @@ function App() {
       setDashRefreshKey((k) => k + 1);
     } else {
       setIsPlacement(false);
-      change = calcEloChange(profileElo, wpmCalc);
+      change = calcEloChange(profileElo, rawWpm);
       newElo = Math.max(0, profileElo + change);
       setEloChange(change);
       setProfileElo(newElo);
