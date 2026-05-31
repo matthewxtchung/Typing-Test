@@ -256,7 +256,7 @@ function App() {
     let change = null;
 
     if (newPlacements.length < PLACEMENT_COUNT) {
-      newPlacements.push(rawWpm);
+      newPlacements.push(Math.round(rawWpm));
       setPlacementResults(newPlacements);
       placementResultsRef.current = newPlacements;
       setIsPlacement(true);
@@ -269,11 +269,12 @@ function App() {
         change = null;
       }
 
-      await supabase.from("profiles").update({
+      const { error: updateError } = await supabase.from("profiles").update({
         placement_results: newPlacements,
         elo: newElo,
         test_in_progress: false,
       }).eq("id", user.id);
+      if (updateError) console.error("profile update error:", updateError);
 
       const { error: e1 } = await supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc, elo_change: null });
       if (e1) console.error("placement insert error:", e1);
