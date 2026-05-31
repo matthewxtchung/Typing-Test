@@ -5,11 +5,12 @@ import "./Dashboard.css";
 
 const PLACEMENT_COUNT = 5;
 
-function Leaderboard({ onClose, username, onViewUser }) {
+function Leaderboard({ onClose, username, onViewUser, refreshKey }) {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     const fetch = async () => {
       const { data: results } = await supabase
         .from("results")
@@ -62,7 +63,6 @@ function Leaderboard({ onClose, username, onViewUser }) {
       <button className="dash-back" onClick={onClose}>← back</button>
       <div className="dash-content">
         <p className="dash-email">leaderboard</p>
-        <p className="dash-lb-notice">results may take a moment to update — refresh if needed</p>
         {loading ? (
           <p className="dash-empty">loading...</p>
         ) : leaderboard.length === 0 ? (
