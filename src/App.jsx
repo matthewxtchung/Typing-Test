@@ -33,8 +33,8 @@ export const getRank = (elo) => RANKS.find((r) => elo >= r.min && elo < r.max) ?
 export const calcEloChange = (currentElo, actualWpm) => {
   const expectedWpm = eloToWpm(currentElo);
   const delta = actualWpm - expectedWpm;
-  const change = Math.round(delta * 5);
-  return Math.max(-150, Math.min(150, change));
+  const change = Math.round(delta * 2);
+  return Math.max(-100, Math.min(100, change));
 };
 
 function App() {
