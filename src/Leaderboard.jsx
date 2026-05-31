@@ -33,7 +33,6 @@ function Leaderboard({ onClose, username, onViewUser, refreshKey }) {
           }])
         );
 
-        // WPM leaderboard — best result per user
         const seen = new Set();
         const topWpm = [];
         for (const row of results) {
@@ -58,7 +57,6 @@ function Leaderboard({ onClose, username, onViewUser, refreshKey }) {
           if (topWpm.length >= 50) break;
         }
 
-        // ELO leaderboard — sorted by elo, placement done only
         const topElo = profiles
           .filter((p) => (p.placement_results ?? []).length >= PLACEMENT_COUNT)
           .sort((a, b) => (b.elo ?? 0) - (a.elo ?? 0))
@@ -86,12 +84,18 @@ function Leaderboard({ onClose, username, onViewUser, refreshKey }) {
   const entries = sortBy === "wpm" ? leaderboardWpm : leaderboardElo;
 
   return (
-    <div className="dash-page">
-      <button className="dash-back" onClick={onClose}>← back</button>
-      <div className="dash-content">
-        <p className="dash-email">leaderboard</p>
+    <div className="dash-page" style={{ overflowY: "auto", height: "100vh" }}>
 
-        <div style={{ display: "flex", gap: "8px", marginBottom: "1.5rem" }}>
+      <div style={{
+        position: "sticky",
+        top: 0,
+        backgroundColor: "#1e1e2e",
+        zIndex: 10,
+        padding: "40px 40px 16px 40px",
+      }}>
+        <button className="dash-back" onClick={onClose}>← back</button>
+        <p className="dash-email" style={{ marginTop: "16px" }}>leaderboard</p>
+        <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
           <button
             className={`mode-button ${sortBy === "wpm" ? "mode-button-active" : ""}`}
             onClick={() => setSortBy("wpm")}
@@ -106,7 +110,9 @@ function Leaderboard({ onClose, username, onViewUser, refreshKey }) {
             top ranked
           </button>
         </div>
+      </div>
 
+      <div className="dash-content" style={{ paddingTop: "8px" }}>
         {loading ? (
           <p className="dash-empty">loading...</p>
         ) : entries.length === 0 ? (
