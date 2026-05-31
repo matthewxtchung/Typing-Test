@@ -75,6 +75,7 @@ function App() {
   const prevVisibleLineStartRef = useRef(0);
   // Track whether ranked test was started for abandon detection
   const rankedStartedRef = useRef(false);
+  const inputRef2 = useRef("");
 
   useEffect(() => {
     document.fonts.ready.then(() => {
@@ -185,26 +186,18 @@ function App() {
   }, [input, targetText, mounted, visibleLineStart]);
 
   const computeStats = (typedValue, targetStr) => {
+    if (!typedValue.length) return { wpmCalc: 0, accCalc: 0, errCount: 0 };
+
     const correct = typedValue.split("").filter((c, i) => c === targetStr[i]).length;
     const errCount = typedValue.length - correct;
-    const accCalc = typedValue.length > 0 ? Math.round((correct / typedValue.length) * 100) : 0;
+    const accCalc = Math.round((correct / typedValue.length) * 100);
     const elapsed = startTimeRef.current ? (Date.now() - startTimeRef.current) / 1000 / 60 : 0;
 
-    // Only count fully correct words
-    const targetWords = targetStr.split(" ");
-    let charIndex = 0;
-    let correctWords = 0;
-    for (const word of targetWords) {
-      const typedWord = typedValue.slice(charIndex, charIndex + word.length);
-      if (typedWord === word) correctWords++;
-      charIndex += word.length + 1;
-      if (charIndex > typedValue.length) break;
-    }
-
-    const wpmCalc = elapsed > 0 ? Math.round(correctWords / elapsed) : 0;
-    return { wpmCalc, accCalc, errCount };
+    const wpmCalc = elapsed > 0 ? Math.round((correct / 5) / elapsed) : 0;
+    const finalWpm = accCalc < 5 ? 0 : wpmCalc;
+    return { wpmCalc: finalWpm, accCalc, errCount };
   };
-  
+
   const finishTest = (typedValue) => {
     clearInterval(timerRef.current);
     finishedRef.current = true;
@@ -224,7 +217,7 @@ function App() {
     clearInterval(timerRef.current);
     finishedRef.current = true;
     rankedStartedRef.current = false;
-    const currentInput = input;
+    const currentInput = inputRef2.current;
     const { wpmCalc, accCalc, errCount } = computeStats(currentInput, targetText);
     setWpm(wpmCalc);
     setAccuracy(accCalc);
@@ -305,6 +298,7 @@ function App() {
       }
     }
     setInput(value);
+    inputRef2.current = value;
 
     if (startTimeRef.current) {
       const elapsed = (Date.now() - startTimeRef.current) / 1000 / 60;
