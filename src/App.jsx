@@ -664,6 +664,7 @@ function App() {
           onClose={handleCloseLeaderboard}
           username={username}
           onViewUser={handleViewUser}
+          refreshKey={dashRefreshKey}
         />
       </div>
 

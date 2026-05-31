@@ -55,7 +55,7 @@ function Leaderboard({ onClose, username, onViewUser }) {
       setLoading(false);
     };
     fetch();
-  }, []);
+  }, [refreshKey]);
 
   return (
     <div className="dash-page">
