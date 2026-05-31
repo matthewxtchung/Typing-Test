@@ -81,6 +81,64 @@ body {
   .user-info {
     gap: 8px;
   }
+
+  /* ── Mobile layout fixes ── */
+  body {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .stats-bar {
+    position: relative;
+    top: unset;
+    left: unset;
+    transform: none;
+    margin-bottom: 16px;
+  }
+
+  .center-column {
+    position: relative;
+    top: unset;
+    left: unset;
+    transform: none;
+    width: 92vw;
+    margin: 0 auto;
+    padding-top: 130px;
+  }
+
+  .test {
+    font-size: clamp(1rem, 4vw, 1.4rem);
+    max-height: calc(3 * 1.5em);
+    line-height: 1.5;
+  }
+
+  .result-screen {
+    position: relative;
+    top: unset;
+    left: unset;
+    transform: none;
+    margin: 130px auto 40px;
+    padding: 0 16px;
+    width: 100%;
+  }
+
+  .result-wpm {
+    font-size: 72px;
+  }
+
+  .result-stats-row {
+    flex-wrap: wrap;
+  }
+
+  .result-stat-cell {
+    padding: 12px 20px;
+    flex: 1 1 40%;
+  }
+
+  .result-stat-cell + .result-stat-cell {
+    border-left: none;
+    border-top: 1px solid #313244;
+  }
 }
 
 @media (max-width: 400px) {
