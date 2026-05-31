@@ -18,12 +18,12 @@ export const wpmToElo = (wpm) => wpm * 10;
 export const eloToWpm = (elo) => elo / 10;
 
 export const RANKS = [
-  { name: "Iron",        min: 0,    max: 400,  color: "#6c7086" },
-  { name: "Bronze",      min: 400,  max: 600,  color: "#e8a87c" },
-  { name: "Silver",      min: 600,  max: 800,  color: "#a6adc8" },
-  { name: "Gold",        min: 800,  max: 1000, color: "#f9e2af" },
-  { name: "Platinum",    min: 1000, max: 1100, color: "#94e2d5" },
-  { name: "Diamond",     min: 1100, max: 1200, color: "#89dceb" },
+  { name: "Iron",        min: 0,    max: 200,  color: "#6c7086" },
+  { name: "Bronze",      min: 200,  max: 400,  color: "#e8a87c" },
+  { name: "Silver",      min: 400,  max: 600,  color: "#a6adc8" },
+  { name: "Gold",        min: 600,  max: 800,  color: "#f9e2af" },
+  { name: "Platinum",    min: 800,  max: 1000, color: "#94e2d5" },
+  { name: "Diamond",     min: 1000, max: 1200, color: "#89dceb" },
   { name: "Master",      min: 1200, max: 1400, color: "#cba6f7" },
   { name: "Grandmaster", min: 1400, max: Infinity, color: "#f38ba8" },
 ];
