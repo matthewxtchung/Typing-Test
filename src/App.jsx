@@ -504,7 +504,7 @@ function App() {
                 </>
               ) : (
                 <>
-                  <span className="stat-value">{placementProgress}<span style={{ fontSize: "16px", color: "#45475a" }}>/10</span></span>
+                  <span className="stat-value">{placementProgress}<span style={{ fontSize: "16px", color: "#45475a" }}>/5</span></span>
                   <span className="stat-label">placement</span>
                 </>
               )}
