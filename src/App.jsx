@@ -10,7 +10,7 @@ import { supabase } from "./supabaseClient";
 
 const RANKED_TIME = 15;
 const WORDS_PER_LINE = 10;
-const PLACEMENT_COUNT = 10;
+const PLACEMENT_COUNT = 5;
 const ABANDON_PENALTY = -150;
 
 // ELO <-> WPM conversion

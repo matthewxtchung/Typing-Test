@@ -3,7 +3,7 @@ import { supabase } from "./supabaseClient";
 import { getRank, RANKS, eloToWpm } from "./App";
 import "./Dashboard.css";
 
-const PLACEMENT_COUNT = 10;
+const PLACEMENT_COUNT = 5;
 
 function Dashboard({ user, username, onClose, visible, profileElo, placementResults, refreshKey }) {
   const [results, setResults] = useState([]);
