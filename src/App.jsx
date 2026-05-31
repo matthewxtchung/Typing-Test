@@ -125,7 +125,7 @@ function App() {
       .single();
     if (data) {
       setUsername(data.username);
-      const placements = data.placement_results ?? [];
+      const placements = (data.placement_results ?? []).map(Math.round);
 
       // Always restore placement_results regardless of penalty branch
       setPlacementResults(placements);
@@ -251,7 +251,7 @@ function App() {
       .eq("id", user.id)
       .single();
 
-    const newPlacements = [...(freshProfile?.placement_results ?? [])];
+    const newPlacements = (freshProfile?.placement_results ?? []).map(Math.round);
     let newElo = freshProfile?.elo ?? profileEloRef.current;
     let change = null;
 

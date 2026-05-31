@@ -27,8 +27,17 @@ function AuthModal({ onClose, onAuth }) {
         const { error: profileError } = await supabase
           .from("profiles")
           .insert({ id: data.user.id, username });
-        if (profileError) setError(profileError.message);
-        else { onAuth(data.user); onClose(); }
+
+        if (profileError) {
+          if (profileError.code === "23505") {
+            setError("That username is already taken.");
+          } else {
+            setError("Something went wrong. Please try again.");
+          }
+        } else {
+          onAuth(data.user);
+          onClose();
+        }
       }
     }
 
