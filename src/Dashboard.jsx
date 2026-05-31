@@ -5,7 +5,7 @@ import "./Dashboard.css";
 
 const PLACEMENT_COUNT = 10;
 
-function Dashboard({ user, username, onClose, visible, profileElo, placementResults }) {
+function Dashboard({ user, username, onClose, visible, profileElo, placementResults, refreshKey }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,7 +22,7 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
       setLoading(false);
     };
     fetchResults();
-  }, [user, visible]);
+  }, [user, visible, refreshKey]);
 
   const best = results.length ? Math.max(...results.map((r) => r.wpm)) : null;
   const avg = results.length
@@ -92,6 +92,7 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

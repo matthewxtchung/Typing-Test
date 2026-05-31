@@ -64,6 +64,7 @@ function App() {
   const [placementResults, setPlacementResults] = useState([]);
   const [eloChange, setEloChange] = useState(null);
   const [isPlacement, setIsPlacement] = useState(false);
+  const [dashRefreshKey, setDashRefreshKey] = useState(0);
 
   const inputRef = useRef(null);
   const caretRef = useRef(null);
@@ -201,7 +202,9 @@ function App() {
     setErrors(errCount);
     setFinished(true);
     if (user) {
-      supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc });
+      supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc }).then(() => {
+        setDashRefreshKey((k) => k + 1);
+      });
     }
   };
 
@@ -243,6 +246,7 @@ function App() {
       }).eq("id", user.id);
 
       await supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc, elo_change: null });
+      setDashRefreshKey((k) => k + 1);
     } else {
       // Ranked game — calc ELO delta
       setIsPlacement(false);
@@ -257,6 +261,7 @@ function App() {
       }).eq("id", user.id);
 
       await supabase.from("results").insert({ user_id: user.id, wpm: wpmCalc, elo_change: change });
+      setDashRefreshKey((k) => k + 1);
     }
   };
 
@@ -608,6 +613,7 @@ function App() {
             visible={showDashboard}
             profileElo={profileElo}
             placementResults={placementResults}
+            refreshKey={dashRefreshKey}
           />
         )}
       </div>
