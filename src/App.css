@@ -9,7 +9,8 @@
 body {
   background-color: #1e1e2e;
   color: #cdd6f4;
-  overflow: hidden;
+  overflow-x: hidden;
+  min-height: 100dvh;
 }
 
 .header {
@@ -81,12 +82,71 @@ body {
   .user-info {
     gap: 8px;
   }
+
+  .center-column {
+    padding-top: 130px;
+    width: 92vw;
+  }
+
+  .stats-bar {
+    gap: 20px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .result-screen {
+    position: relative;
+    top: unset;
+    left: unset;
+    transform: none;
+    margin: 120px auto 40px;
+    padding: 0 16px;
+    width: 100%;
+  }
+
+  .result-wpm {
+    font-size: 72px;
+  }
+
+  .result-stats-row {
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+  }
+
+  .result-stat-cell {
+    padding: 12px 20px;
+    flex: 1 1 40%;
+  }
+
+  .result-stat-cell + .result-stat-cell {
+    border-left: none;
+    border-top: 1px solid #313244;
+  }
 }
 
 @media (max-width: 400px) {
   .user-info {
     flex-wrap: wrap;
     justify-content: flex-end;
+  }
+
+  .center-column {
+    padding-top: 110px;
+    width: 96vw;
+  }
+
+  .stats-bar {
+    gap: 14px;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .stat-label {
+    font-size: 9px;
   }
 }
 
@@ -111,16 +171,13 @@ h1 {
 }
 
 .stats-bar {
-  position: fixed;
-  top: 270px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 32px;
-  z-index: 5;
+  margin-bottom: 24px;
 }
 
 .stat-item {
@@ -154,14 +211,13 @@ h1 {
 }
 
 .center-column {
-  position: fixed;
-  top: 320px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   width: min(1400px, 90vw);
+  margin: 0 auto;
+  padding-top: 160px;
 }
 
 .center-column-ranked {
@@ -181,9 +237,10 @@ h1 {
   position: relative;
   text-align: center;
   width: 100%;
-  max-height: calc(3 * 2em * 1.5);
   overflow: hidden;
-  font-size: 2em;
+  font-size: clamp(1.1rem, 3.5vw, 2rem);
+  line-height: 1.5;
+  max-height: calc(3 * 1.5em);
   font-family: 'Source Code Pro', monospace;
   color: #6c7086;
   flex-shrink: 0;
@@ -200,11 +257,12 @@ h1 {
 }
 
 .reset-row {
-  height: 80px;
+  height: auto;
+  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 28px;
+  margin-top: 24px;
   flex-shrink: 0;
 }
 
