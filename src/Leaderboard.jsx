@@ -6,12 +6,14 @@ import "./Dashboard.css";
 const PLACEMENT_COUNT = 5;
 
 function Leaderboard({ onClose, username, onViewUser, refreshKey }) {
-  const [leaderboard, setLeaderboard] = useState([]);
+  const [leaderboardWpm, setLeaderboardWpm] = useState([]);
+  const [leaderboardElo, setLeaderboardElo] = useState([]);
+  const [sortBy, setSortBy] = useState("wpm");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    const fetch = async () => {
+    const fetchData = async () => {
       const { data: results } = await supabase
         .from("results")
         .select("wpm, user_id")
@@ -30,13 +32,17 @@ function Leaderboard({ onClose, username, onViewUser, refreshKey }) {
             placementDone: (p.placement_results ?? []).length >= PLACEMENT_COUNT,
           }])
         );
+
+        // WPM leaderboard — best result per user
         const seen = new Set();
-        const top = [];
+        const topWpm = [];
         for (const row of results) {
           if (!seen.has(row.user_id)) {
             seen.add(row.user_id);
-            const profile = profileMap[row.user_id] ?? { username: "unknown", elo: 0, placement_results: [], placementDone: false };
-            top.push({
+            const profile = profileMap[row.user_id] ?? {
+              username: "unknown", elo: 0, placement_results: [], placementDone: false,
+            };
+            topWpm.push({
               username: profile.username,
               wpm: row.wpm,
               elo: profile.elo,
@@ -49,27 +55,65 @@ function Leaderboard({ onClose, username, onViewUser, refreshKey }) {
               },
             });
           }
-          if (top.length >= 50) break;
+          if (topWpm.length >= 50) break;
         }
-        setLeaderboard(top);
+
+        // ELO leaderboard — sorted by elo, placement done only
+        const topElo = profiles
+          .filter((p) => (p.placement_results ?? []).length >= PLACEMENT_COUNT)
+          .sort((a, b) => (b.elo ?? 0) - (a.elo ?? 0))
+          .slice(0, 50)
+          .map((p) => ({
+            username: p.username,
+            elo: p.elo ?? 0,
+            rank: getRank(p.elo ?? 0),
+            profileData: {
+              id: p.id,
+              username: p.username,
+              elo: p.elo ?? 0,
+              placement_results: p.placement_results ?? [],
+            },
+          }));
+
+        setLeaderboardWpm(topWpm);
+        setLeaderboardElo(topElo);
       }
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, [refreshKey]);
+
+  const entries = sortBy === "wpm" ? leaderboardWpm : leaderboardElo;
 
   return (
     <div className="dash-page">
       <button className="dash-back" onClick={onClose}>← back</button>
       <div className="dash-content">
         <p className="dash-email">leaderboard</p>
+
+        <div style={{ display: "flex", gap: "8px", marginBottom: "1.5rem" }}>
+          <button
+            className={`mode-button ${sortBy === "wpm" ? "mode-button-active" : ""}`}
+            onClick={() => setSortBy("wpm")}
+          >
+            fastest wpm
+          </button>
+          <span className="mode-divider">|</span>
+          <button
+            className={`mode-button ${sortBy === "elo" ? "mode-button-active" : ""}`}
+            onClick={() => setSortBy("elo")}
+          >
+            top ranked
+          </button>
+        </div>
+
         {loading ? (
           <p className="dash-empty">loading...</p>
-        ) : leaderboard.length === 0 ? (
+        ) : entries.length === 0 ? (
           <p className="dash-empty">no results yet.</p>
         ) : (
           <div className="dash-leaderboard">
-            {leaderboard.map((entry, i) => (
+            {entries.map((entry, i) => (
               <div
                 key={i}
                 className={`dash-lb-row ${entry.username === username ? "dash-lb-you" : ""}`}
@@ -95,7 +139,9 @@ function Leaderboard({ onClose, username, onViewUser, refreshKey }) {
                     </span>
                   )}
                 </span>
-                <span className="dash-lb-wpm">{entry.wpm} wpm</span>
+                {sortBy === "wpm" && (
+                  <span className="dash-lb-wpm">{entry.wpm} wpm</span>
+                )}
               </div>
             ))}
           </div>

@@ -100,17 +100,22 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
         ) : results.length === 0 ? (
           <p className="dash-empty">no tests yet.</p>
         ) : (
-          <div className="dash-stats">
-            <div className="dash-stat">
-              <p className="dash-stat-label">average</p>
-              <p className="dash-stat-value">{avg}</p>
-            </div>
-            <div className="dash-divider" />
-            <div className="dash-stat">
-              <p className="dash-stat-label">best</p>
-              <p className="dash-stat-value">{best}</p>
-            </div>
+        <div className="dash-stats">
+          <div className="dash-stat">
+            <p className="dash-stat-label">average</p>
+            <p className="dash-stat-value">{avg}</p>
           </div>
+          <div className="dash-divider" />
+          <div className="dash-stat">
+            <p className="dash-stat-label">best</p>
+            <p className="dash-stat-value">{best}</p>
+          </div>
+          <div className="dash-divider" />
+          <div className="dash-stat">
+            <p className="dash-stat-label">tests completed</p>
+            <p className="dash-stat-value">{results.length}</p>
+          </div>
+        </div>
         )}
       </div>
     </div>
