@@ -194,6 +194,7 @@ function App() {
 
   const finishTest = (typedValue) => {
     clearInterval(timerRef.current);
+    finishedRef.current = true;
     const { wpmCalc, accCalc, errCount } = computeStats(typedValue, targetText);
     setWpm(wpmCalc);
     setAccuracy(accCalc);
@@ -206,6 +207,7 @@ function App() {
 
   const finishRanked = async () => {
     clearInterval(timerRef.current);
+    finishedRef.current = true;
     rankedStartedRef.current = false;
     const currentInput = inputRef.current?.value ?? "";
     const { wpmCalc, accCalc, errCount } = computeStats(currentInput, targetText);
@@ -256,7 +258,10 @@ function App() {
     }
   };
 
+  const finishedRef = useRef(false);
+
   const handleChange = (e) => {
+    if (finishedRef.current) return;
     const value = e.target.value;
     if (!started && value.length === 1) {
       setStarted(true);
@@ -307,6 +312,7 @@ function App() {
 
   const resetState = () => {
     clearInterval(timerRef.current);
+    finishedRef.current = false;
     setInput("");
     startTimeRef.current = null;
     setStarted(false);
