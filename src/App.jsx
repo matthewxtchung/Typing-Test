@@ -85,6 +85,24 @@ function App() {
   const profileEloRef = useRef(0);
 
   useEffect(() => {
+  const handleResize = () => {
+    const currentChar = charsRef.current[input.length];
+    if (!currentChar || !caretRef.current || !testRef.current) return;
+    caretRef.current.style.opacity = "0";
+    requestAnimationFrame(() => {
+      const charRect = currentChar.getBoundingClientRect();
+      const testRect = testRef.current.getBoundingClientRect();
+      caretRef.current.style.left = `${charRect.left - testRect.left}px`;
+      caretRef.current.style.top = `${charRect.top - testRect.top}px`;
+      caretRef.current.style.opacity = "1";
+    });
+  };
+
+  window.addEventListener("resize", handleResize);
+  return () => window.removeEventListener("resize", handleResize);
+}, [input]);
+
+  useEffect(() => {
     document.fonts.ready.then(() => {
       setMounted(true);
       setTimeout(() => setPageLoaded(true), 50);

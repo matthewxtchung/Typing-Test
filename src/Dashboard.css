@@ -282,3 +282,12 @@
   letter-spacing: 1px;
   text-transform: none;
 }
+
+.dash-rank-number {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 6px;
+  font-weight: 400;
+}

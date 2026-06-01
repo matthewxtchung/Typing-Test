@@ -8,6 +8,7 @@ const PLACEMENT_COUNT = 5;
 function Dashboard({ user, username, onClose, visible, profileElo, placementResults, refreshKey, readOnly }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [gmRank, setGmRank] = useState(null);
 
   useEffect(() => {
     if (!visible || !user) return;
@@ -34,28 +35,36 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
     fetchResults();
   }, [user, visible, refreshKey]);
 
+  const placementDone = placementResults.length >= PLACEMENT_COUNT;
+  const currentRank = placementDone ? getRank(profileElo) : null;
+
+  useEffect(() => {
+    if (!placementDone || currentRank?.name !== "Grandmaster") return;
+    const fetchGmRank = async () => {
+      const { count } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .gt("elo", profileElo);
+      setGmRank((count ?? 0) + 1);
+    };
+    fetchGmRank();
+  }, [profileElo, placementDone, currentRank]);
+
   const best = results.length ? Math.max(...results.map((r) => r.wpm)) : null;
   const avg = results.length
     ? Math.round(results.reduce((sum, r) => sum + r.wpm, 0) / results.length)
     : null;
 
-  const placementDone = placementResults.length >= PLACEMENT_COUNT;
-  const currentRank = placementDone ? getRank(profileElo) : null;
   const nextRank = placementDone ? RANKS.find((r) => r.min > profileElo) ?? null : null;
   const eloToNext = nextRank ? nextRank.min - profileElo : null;
 
-  const rankRangeLabel = currentRank
-    ? currentRank.max === Infinity
-      ? `${currentRank.min}+ elo`
-      : `${currentRank.min}–${currentRank.max} elo`
-    : null;
-
-  // Progress bar: how far through the current rank range
   const progressPct = currentRank && currentRank.max !== Infinity
     ? Math.min(100, Math.max(0, ((profileElo - currentRank.min) / (currentRank.max - currentRank.min)) * 100))
     : currentRank
     ? 99
     : 0;
+
+  const isGrandmaster = currentRank?.name === "Grandmaster";
 
   return (
     <div className="dash-page">
@@ -69,28 +78,36 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
               {currentRank.name}
             </p>
             <p className="dash-elo-value">{profileElo} <span className="dash-elo-unit">elo</span></p>
-            {nextRank && !readOnly && (
+            {!isGrandmaster && nextRank && !readOnly && (
               <p className="dash-elo-next">
                 {eloToNext} elo to <span style={{ color: nextRank.color }}>{nextRank.name}</span>
                 <span className="dash-elo-next-wpm"> (~{Math.ceil(eloToWpm(nextRank.min))} wpm)</span>
               </p>
             )}
-            <div className="dash-progress-wrap">
-              <div className="dash-progress-labels">
-                <span>{currentRank.min}</span>
-                <span>{currentRank.max === Infinity ? "∞" : currentRank.max}</span>
+            {isGrandmaster ? (
+              gmRank && (
+                <p className="dash-rank-number" style={{ color: currentRank.color }}>
+                  Rank #{gmRank}
+                </p>
+              )
+            ) : (
+              <div className="dash-progress-wrap">
+                <div className="dash-progress-labels">
+                  <span>{currentRank.min}</span>
+                  <span>{currentRank.max === Infinity ? "∞" : currentRank.max}</span>
+                </div>
+                <div className="dash-progress-track">
+                  <div
+                    className="dash-progress-fill"
+                    style={{ width: `${progressPct}%`, background: currentRank.color }}
+                  />
+                  <div
+                    className="dash-progress-thumb"
+                    style={{ left: `calc(${progressPct}% - 6px)`, borderColor: currentRank.color }}
+                  />
+                </div>
               </div>
-              <div className="dash-progress-track">
-                <div
-                  className="dash-progress-fill"
-                  style={{ width: `${progressPct}%`, background: currentRank.color }}
-                />
-                <div
-                  className="dash-progress-thumb"
-                  style={{ left: `calc(${progressPct}% - 6px)`, borderColor: currentRank.color }}
-                />
-              </div>
-            </div>
+            )}
           </div>
         ) : (
           <div className="dash-rank-section">

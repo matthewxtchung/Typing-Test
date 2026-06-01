@@ -107,7 +107,7 @@ body {
   }
 
   .test {
-    font-size: clamp(1rem, 4vw, 1.4rem);
+    font-size: clamp(1rem, 2.5vw, 2em);
     max-height: calc(3 * 1.5em);
     line-height: 1.5;
   }
@@ -522,4 +522,27 @@ h1 {
 @keyframes timerPulse {
   0%   { transform: scale(1.3); }
   100% { transform: scale(1); }
+}
+
+@media (max-width: 860px) {
+  .header-center {
+    position: static;
+    transform: none;
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    padding-top: 8px;
+  }
+
+  .header-content {
+    flex-wrap: wrap;
+  }
+
+  .stats-bar {
+    top: 310px;
+  }
+
+  .center-column {
+    top: 360px;
+  }
 }
