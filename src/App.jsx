@@ -609,7 +609,7 @@ function App() {
       <div className={`center-column fade ${!pageLoaded || anyOverlay ? "fade-hidden" : ""} ${mode === "ranked" ? "center-column-ranked" : ""}`}>
         <div className="ranked-timer-row">
           {mode === "ranked" && started && !finished && (
-            <p className={`ranked-timer ${timeLeft <= 3 ? "danger" : timeLeft <= 6 ? "warning" : ""}`}>
+            <p className={"ranked-timer"}>
               {timeLeft}
             </p>
           )}
