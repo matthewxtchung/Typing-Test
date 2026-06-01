@@ -132,7 +132,6 @@ function Leaderboard({ onClose, username, onViewUser, refreshKey }) {
                       style={{
                         background: entry.rank.color + "22",
                         color: entry.rank.color,
-                        border: `1px solid ${entry.rank.color}55`,
                       }}
                     >
                       {entry.rank.name} ({entry.elo} elo)
