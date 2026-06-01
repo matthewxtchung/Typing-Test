@@ -36,7 +36,6 @@ function RankedModal({ onClose }) {
         <div className="rmodal-legend">
           {RANKS.map((r) => (
             <div key={r.name} className="rmodal-legend-row">
-              <div className="rmodal-legend-pip" style={{ background: r.color }} />
               <span className="rmodal-legend-name" style={{ color: r.color }}>{r.name}</span>
               <span className="rmodal-legend-range">
                 {r.max === Infinity
