@@ -20,7 +20,19 @@ function AuthModal({ onClose, onAuth }) {
       if (error) setError(error.message);
       else { onAuth(data.user); onClose(); }
     } else {
-      // Check username availability BEFORE creating the auth account
+      // VALIDATION FIRST, before anything touches supabase
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        setError("Username can only contain letters, numbers, and underscores.");
+        setLoading(false);
+        return;
+      }
+      if (username.length < 3 || username.length > 20) {
+        setError("Username must be between 3 and 20 characters.");
+        setLoading(false);
+        return;
+      }
+
+      // Now check availability
       const { data: existing } = await supabase
         .from("profiles")
         .select("id")
@@ -50,18 +62,6 @@ function AuthModal({ onClose, onAuth }) {
         } else {
           onAuth(data.user);
           onClose();
-          if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-            setError("Username can only contain letters, numbers, and underscores.");
-            setLoading(false);
-            return;
-          }
-          if (username.length < 3 || username.length > 20) {
-            setError("Username must be between 3 and 20 characters.");
-            setLoading(false);
-            return;
-          }
-
-          const { data: existing } = await supabase
         }
       }
     }
