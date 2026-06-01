@@ -67,7 +67,6 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
           <div className="dash-rank-section">
             <p className="dash-rank-name" style={{ color: currentRank.color }}>
               {currentRank.name}
-              <span className="dash-rank-range"> ({rankRangeLabel})</span>
             </p>
             <p className="dash-elo-value">{profileElo} <span className="dash-elo-unit">elo</span></p>
             {nextRank && !readOnly && (

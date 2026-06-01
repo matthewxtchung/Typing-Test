@@ -56,6 +56,10 @@
 }
 
 .dash-elo-value {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
   font-family: 'Source Code Pro', monospace;
   font-size: 64px;
   color: #cdd6f4;
