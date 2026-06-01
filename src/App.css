@@ -7,8 +7,8 @@
 }
 
 body {
-  background-color: #1e1e2e;
-  color: #cdd6f4;
+  background-color: #111111;
+  color: #ffffff;
   overflow: hidden;
 }
 
@@ -18,7 +18,7 @@ body {
   left: 0;
   width: 100%;
   padding: 20px 180px;
-  background-color: #1e1e2e;
+  background-color: #111111;
   z-index: 10;
 }
 
@@ -82,7 +82,6 @@ body {
     gap: 8px;
   }
 
-  /* ── Mobile layout fixes ── */
   body {
     overflow-x: hidden;
     overflow-y: auto;
@@ -137,7 +136,7 @@ body {
 
   .result-stat-cell + .result-stat-cell {
     border-left: none;
-    border-top: 1px solid #313244;
+    border-top: 1px solid #2c2e31;
   }
 }
 
@@ -165,7 +164,7 @@ h1 {
   font-family: 'Syne', sans-serif;
   font-weight: 600;
   letter-spacing: -0.3px;
-  color: #cba6f7;
+  color: #ffffff;
 }
 
 .stats-bar {
@@ -191,7 +190,7 @@ h1 {
 .stat-value {
   font-family: 'Source Code Pro', monospace;
   font-size: 28px;
-  color: #cba6f7;
+  color: #ffffff;
   line-height: 1;
   min-width: 3ch;
   text-align: center;
@@ -200,7 +199,7 @@ h1 {
 .stat-label {
   font-family: 'Source Code Pro', monospace;
   font-size: 11px;
-  color: #6c7086;
+  color: #646669;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -208,7 +207,7 @@ h1 {
 .stat-divider {
   width: 1px;
   height: 32px;
-  background: #313244;
+  background: #2c2e31;
 }
 
 .center-column {
@@ -243,11 +242,10 @@ h1 {
   overflow: hidden;
   font-size: 2em;
   font-family: 'Source Code Pro', monospace;
-  color: #6c7086;
+  color: #646669;
   flex-shrink: 0;
 }
 
-/* Line shift animation */
 @keyframes lineShift {
   0%   { transform: translateY(1.5em); }
   100% { transform: translateY(0px); }
@@ -270,7 +268,7 @@ h1 {
   position: absolute;
   width: 2px;
   height: 1.1em;
-  background-color: #cba6f7;
+  background-color: #ffffff;
   animation: blink 1s step-start infinite;
   transition: left 0.08s linear, top 0.08s linear;
   pointer-events: none;
@@ -298,14 +296,13 @@ h1 {
 }
 
 .correct {
-  color: #cdd6f4;
+  color: #ffffff;
 }
 
 .incorrect {
-  color: #f38ba8;
+  color: #ca4754;
 }
 
-/* Result screen */
 .result-screen {
   position: fixed;
   top: 50%;
@@ -326,7 +323,7 @@ h1 {
   font-size: 13px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #6c7086;
+  color: #646669;
 }
 
 .result-elo-row {
@@ -346,7 +343,7 @@ h1 {
 .result-elo-value {
   font-family: 'Source Code Pro', monospace;
   font-size: 28px;
-  color: #cdd6f4;
+  color: #ffffff;
   line-height: 1;
 }
 
@@ -357,11 +354,11 @@ h1 {
 }
 
 .elo-gain {
-  color: #a6e3a1;
+  color: #4caf74;
 }
 
 .elo-loss {
-  color: #f38ba8;
+  color: #ca4754;
 }
 
 .result-wpm-label {
@@ -369,15 +366,15 @@ h1 {
   font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: #45475a;
+  color: #858585;
   margin-bottom: 4px;
 }
 
 .result-wpm {
   font-family: 'Source Code Pro', monospace;
   font-size: 96px;
-  font-weight: 300;
-  color: #cba6f7;
+  font-weight: 400;
+  color: #ffffff;
   line-height: 1;
   margin-bottom: 4px;
 }
@@ -385,7 +382,7 @@ h1 {
 .result-wpm-unit {
   font-family: 'Source Code Pro', monospace;
   font-size: 13px;
-  color: #6c7086;
+  color: #646669;
   letter-spacing: 1.5px;
   margin-bottom: 28px;
 }
@@ -393,7 +390,7 @@ h1 {
 .result-stats-row {
   display: flex;
   align-items: stretch;
-  border: 1px solid #313244;
+  border: 1px solid #2c2e31;
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 48px;
@@ -408,14 +405,14 @@ h1 {
 }
 
 .result-stat-cell + .result-stat-cell {
-  border-left: 1px solid #313244;
+  border-left: 1px solid #2c2e31;
 }
 
 .result-stat-value {
   font-family: 'Source Code Pro', monospace;
   font-size: 24px;
-  font-weight: 300;
-  color: #cdd6f4;
+  font-weight: 400;
+  color: #ffffff;
   line-height: 1;
 }
 
@@ -424,7 +421,7 @@ h1 {
   font-size: 10px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #45475a;
+  color: #858585;
 }
 
 .fade {
@@ -448,19 +445,19 @@ h1 {
 
 .user-button {
   background: none;
-  border: 1px solid #313244;
+  border: 1px solid #2c2e31;
   border-radius: 8px;
   padding: 8px 16px;
   font-size: 13px;
   font-family: 'Source Code Pro', monospace;
-  color: #6c7086;
+  color: #646669;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .user-button:hover {
-  border-color: #cba6f7;
-  color: #cba6f7;
+  border-color: #ffffff;
+  color: #ffffff;
 }
 
 .header-center {
@@ -477,46 +474,33 @@ h1 {
   border: none;
   font-family: 'Source Code Pro', monospace;
   font-size: 14px;
-  color: #6c7086;
+  color: #646669;
   cursor: pointer;
   padding: 0;
   transition: color 0.15s ease;
 }
 
 .mode-button:hover {
-  color: #cdd6f4;
+  color: #ffffff;
 }
 
 .mode-button-active {
-  color: #cba6f7;
+  color: #ffffff;
 }
 
 .mode-divider {
-  color: #313244;
+  color: #2c2e31;
   font-family: 'Source Code Pro', monospace;
 }
 
 .ranked-timer {
   font-family: 'Source Code Pro', monospace;
   font-size: 32px;
-  font-weight: 300;
-  color: #cba6f7;
+  font-weight: 400;
+  color: #ffffff;
   line-height: 1;
   min-width: 2ch;
   text-align: center;
-  transition: color 0.4s ease, transform 0.1s ease;
-}
-
-.ranked-timer.warning {
-  color: #fab387;
-}
-
-.ranked-timer.danger {
-  color: #f38ba8;
-}
-
-.ranked-timer.pulse {
-  animation: timerPulse 0.5s ease-out;
 }
 
 @keyframes timerPulse {

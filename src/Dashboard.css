@@ -1,7 +1,7 @@
 .dash-page {
   position: fixed;
   inset: 0;
-  background-color: #1e1e2e;
+  background-color: #111111;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,14 +16,14 @@
   border: none;
   font-size: 14px;
   font-family: 'Source Code Pro', monospace;
-  color: #6c7086;
+  color: #646669;
   cursor: pointer;
   transition: color 0.15s ease;
   padding: 0;
 }
 
 .dash-back:hover {
-  color: #cba6f7;
+  color: #ffffff;
 }
 
 .dash-content {
@@ -37,10 +37,9 @@
 .dash-email {
   font-size: 14px;
   font-family: 'Source Code Pro', monospace;
-  color: #6c7086;
+  color: #646669;
 }
 
-/* Rank section */
 .dash-rank-section {
   display: flex;
   flex-direction: column;
@@ -62,27 +61,26 @@
   gap: 10px;
   font-family: 'Source Code Pro', monospace;
   font-size: 64px;
-  color: #cdd6f4;
+  color: #ffffff;
   line-height: 1;
 }
 
 .dash-elo-unit {
   font-size: 20px;
-  color: #6c7086;
+  color: #646669;
 }
 
 .dash-elo-next {
   font-family: 'Source Code Pro', monospace;
   font-size: 12px;
-  color: #6c7086;
+  color: #646669;
   margin-top: 4px;
 }
 
 .dash-elo-next-wpm {
-  color: #45475a;
+  color: #858585;
 }
 
-/* Progress bar */
 .dash-progress-wrap {
   width: 280px;
   margin-top: 16px;
@@ -93,13 +91,13 @@
   justify-content: space-between;
   font-family: 'Source Code Pro', monospace;
   font-size: 11px;
-  color: #45475a;
+  color: #858585;
   margin-bottom: 8px;
 }
 
 .dash-progress-track {
   height: 4px;
-  background: #313244;
+  background: #2c2e31;
   border-radius: 2px;
   position: relative;
 }
@@ -114,28 +112,26 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #1e1e2e;
+  background: #111111;
   border: 2px solid;
   position: absolute;
   top: -4px;
   transition: left 0.4s ease;
 }
 
-/* Placement */
 .dash-placement-info {
   font-family: 'Source Code Pro', monospace;
   font-size: 28px;
-  color: #cba6f7;
+  color: #ffffff;
 }
 
 .dash-placement-sub {
   font-family: 'Source Code Pro', monospace;
   font-size: 12px;
-  color: #45475a;
+  color: #858585;
   text-align: center;
 }
 
-/* Stats */
 .dash-stats {
   display: flex;
   align-items: center;
@@ -152,26 +148,26 @@
 .dash-stat-label {
   font-size: 14px;
   font-family: 'Source Code Pro', monospace;
-  color: #6c7086;
+  color: #646669;
 }
 
 .dash-stat-value {
   font-size: 52px;
   font-family: 'Source Code Pro', monospace;
-  color: #cba6f7;
+  color: #ffffff;
   line-height: 1;
 }
 
 .dash-divider {
   width: 1px;
   height: 60px;
-  background-color: #313244;
+  background-color: #2c2e31;
 }
 
 .dash-empty {
   font-size: 14px;
   font-family: 'Source Code Pro', monospace;
-  color: #6c7086;
+  color: #646669;
 }
 
 .dash-tabs {
@@ -185,19 +181,19 @@
   border: none;
   font-family: 'Source Code Pro', monospace;
   font-size: 14px;
-  color: #6c7086;
+  color: #646669;
   cursor: pointer;
   padding: 0;
   transition: color 0.15s ease;
 }
 
 .dash-tab:hover {
-  color: #cdd6f4;
+  color: #ffffff;
 }
 
 .dash-tab-active {
-  color: #cba6f7;
-  border-bottom: 1px solid #cba6f7;
+  color: #ffffff;
+  border-bottom: 1px solid #ffffff;
   padding-bottom: 2px;
 }
 
@@ -214,29 +210,29 @@
   gap: 1rem;
   font-family: 'Source Code Pro', monospace;
   font-size: 14px;
-  color: #6c7086;
+  color: #646669;
 }
 
 .dash-lb-rank {
   width: 40px;
-  color: #45475a;
+  color: #858585;
 }
 
 .dash-lb-name {
   flex: 1;
-  color: #cdd6f4;
+  color: #ffffff;
 }
 
 .dash-lb-wpm {
-  color: #cba6f7;
+  color: #ffffff;
 }
 
 .dash-lb-you .dash-lb-name {
-  color: #cba6f7;
+  color: #e2e2e2;
 }
 
 .dash-lb-you .dash-lb-rank {
-  color: #cba6f7;
+  color: #e2e2e2;
 }
 
 .dash-lb-rank-badge {
@@ -252,7 +248,7 @@
 .dash-lb-notice {
   font-family: 'Source Code Pro', monospace;
   font-size: 11px;
-  color: #45475a;
+  color: #858585;
   letter-spacing: 0.5px;
   margin-top: -32px;
 }
@@ -263,22 +259,22 @@
   padding: 0;
   font-family: 'Source Code Pro', monospace;
   font-size: 14px;
-  color: #cdd6f4;
+  color: #ffffff;
   cursor: pointer;
   transition: color 0.15s ease;
 }
 
 .dash-lb-username-btn:hover {
-  color: #cba6f7;
+  color: #e2e2e2;
 }
 
 .dash-lb-you .dash-lb-username-btn {
-  color: #cba6f7;
+  color: #e2e2e2;
 }
 
 .dash-rank-range {
   font-size: 11px;
-  color: #6c7086;
+  color: #646669;
   letter-spacing: 1px;
   text-transform: none;
 }
