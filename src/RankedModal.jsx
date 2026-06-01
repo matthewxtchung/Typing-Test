@@ -10,23 +10,23 @@ function RankedModal({ onClose }) {
         <div className="rmodal-rules">
           <div className="rmodal-rule">
             <span className="rmodal-num">1</span>
-            <span>you have <span className="rmodal-highlight">15 seconds</span> to type as fast and accurately as you can</span>
+            <span>you have 15 seconds to type as fast and accurately as you can</span>
           </div>
           <div className="rmodal-rule">
             <span className="rmodal-num">2</span>
-            <span>text is <span className="rmodal-highlight">random words</span>, not quotes</span>
+            <span>text is random words, not quotes</span>
           </div>
           <div className="rmodal-rule">
             <span className="rmodal-num">3</span>
-            <span>there is <span className="rmodal-highlight">no reset</span> once you start typing</span>
+            <span>there is no reset once you start typing</span>
           </div>
           <div className="rmodal-rule">
             <span className="rmodal-num">4</span>
-            <span>complete <span className="rmodal-highlight">5 placement tests</span> to receive your starting rank</span>
+            <span>complete 5 placement tests to receive your starting rank</span>
           </div>
           <div className="rmodal-rule">
             <span className="rmodal-num">5</span>
-            <span>abandoning a test (including refreshing) costs <span className="rmodal-highlight">50 elo</span></span>
+            <span>abandoning a test (including refreshing) costs 50 elo</span>
           </div>
         </div>
 
