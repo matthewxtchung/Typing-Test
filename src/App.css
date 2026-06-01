@@ -508,7 +508,7 @@ h1 {
   100% { transform: scale(1); }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .header-center {
     position: static;
     transform: none;
@@ -528,5 +528,11 @@ h1 {
 
   .center-column {
     top: 360px;
+  }
+}
+
+@media (max-width: 750px) {
+  h1 {
+    display: none;
   }
 }
