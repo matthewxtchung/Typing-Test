@@ -50,6 +50,13 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
       : `${currentRank.min}–${currentRank.max} elo`
     : null;
 
+  // Progress bar: how far through the current rank range
+  const progressPct = currentRank && currentRank.max !== Infinity
+    ? Math.min(100, Math.max(0, ((profileElo - currentRank.min) / (currentRank.max - currentRank.min)) * 100))
+    : currentRank
+    ? 99
+    : 0;
+
   return (
     <div className="dash-page">
       <button className="dash-back" onClick={onClose}>← back</button>
@@ -69,21 +76,21 @@ function Dashboard({ user, username, onClose, visible, profileElo, placementResu
                 <span className="dash-elo-next-wpm"> (~{Math.ceil(eloToWpm(nextRank.min))} wpm)</span>
               </p>
             )}
-            <div className="dash-rank-bar-wrap">
-              {RANKS.map((r) => {
-                const isCurrent = currentRank && r.name === currentRank.name;
-                return (
-                  <div
-                    key={r.name}
-                    className={`dash-rank-pip ${isCurrent ? "dash-rank-pip-current" : ""}`}
-                    title={r.name}
-                    style={{
-                      background: r.color,
-                      opacity: profileElo >= r.min ? 1 : 0.35,
-                    }}
-                  />
-                );
-              })}
+            <div className="dash-progress-wrap">
+              <div className="dash-progress-labels">
+                <span>{currentRank.min}</span>
+                <span>{currentRank.max === Infinity ? "∞" : currentRank.max}</span>
+              </div>
+              <div className="dash-progress-track">
+                <div
+                  className="dash-progress-fill"
+                  style={{ width: `${progressPct}%`, background: currentRank.color }}
+                />
+                <div
+                  className="dash-progress-thumb"
+                  style={{ left: `calc(${progressPct}% - 6px)`, borderColor: currentRank.color }}
+                />
+              </div>
             </div>
           </div>
         ) : (

@@ -78,17 +78,43 @@
   color: #45475a;
 }
 
-.dash-rank-bar-wrap {
-  display: flex;
-  gap: 6px;
-  margin-top: 12px;
+/* Progress bar */
+.dash-progress-wrap {
+  width: 280px;
+  margin-top: 16px;
 }
 
-.dash-rank-pip {
-  width: 28px;
+.dash-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 11px;
+  color: #45475a;
+  margin-bottom: 8px;
+}
+
+.dash-progress-track {
   height: 4px;
+  background: #313244;
   border-radius: 2px;
-  transition: background 0.2s ease;
+  position: relative;
+}
+
+.dash-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.dash-progress-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #1e1e2e;
+  border: 2px solid;
+  position: absolute;
+  top: -4px;
+  transition: left 0.4s ease;
 }
 
 /* Placement */
@@ -109,14 +135,14 @@
 .dash-stats {
   display: flex;
   align-items: center;
-  gap: 64px;
+  gap: 48px;
 }
 
 .dash-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .dash-stat-label {
@@ -126,7 +152,7 @@
 }
 
 .dash-stat-value {
-  font-size: 96px;
+  font-size: 52px;
   font-family: 'Source Code Pro', monospace;
   color: #cba6f7;
   line-height: 1;
@@ -134,7 +160,7 @@
 
 .dash-divider {
   width: 1px;
-  height: 100px;
+  height: 60px;
   background-color: #313244;
 }
 
@@ -217,13 +243,6 @@
   font-weight: 500;
   letter-spacing: 0.03em;
   vertical-align: middle;
-}
-
-.dash-rank-pip-current {
-  height: 6px;
-  border-radius: 3px;
-  outline: 2px solid #cdd6f4;
-  outline-offset: 2px;
 }
 
 .dash-lb-notice {

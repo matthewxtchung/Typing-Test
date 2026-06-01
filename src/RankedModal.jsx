@@ -5,7 +5,7 @@ function RankedModal({ onClose }) {
   return (
     <div className="rmodal-overlay">
       <div className="rmodal">
-        <p className="rmodal-title">welcome to ranked</p>
+        <p className="rmodal-title">ranked</p>
 
         <div className="rmodal-rules">
           <div className="rmodal-rule">
