@@ -35,9 +35,14 @@
 }
 
 .dash-email {
-  font-size: 14px;
+  font-size: 24px;
   font-family: 'Source Code Pro', monospace;
-  color: #646669;
+  color: #ffffff;
+  letter-spacing: 2px;
+  padding-bottom: 36px;
+  border-bottom: 1px solid #2c2e31;
+  width: 300px;
+  text-align: center;
 }
 
 .dash-rank-section {
